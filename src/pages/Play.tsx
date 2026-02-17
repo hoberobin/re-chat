@@ -18,6 +18,11 @@ const MAX_STRIKES = 3;
 
 interface PlayProps {
   previewPuzzle?: Puzzle;
+  onSolved?: () => void;
+  /** When true, hide the "re:chat" header (e.g. when embedded in Landing) */
+  hideHeader?: boolean;
+  /** When true, hide the "You got it" message (e.g. parent shows its own) */
+  hideSuccessMessage?: boolean;
 }
 
 function initPuzzle(seedId?: string, override?: Puzzle): { puzzle: Puzzle; order: string[] } {
@@ -30,7 +35,7 @@ function initPuzzle(seedId?: string, override?: Puzzle): { puzzle: Puzzle; order
   return { puzzle, order };
 }
 
-export function Play({ previewPuzzle }: PlayProps = {}) {
+export function Play({ previewPuzzle, onSolved, hideHeader, hideSuccessMessage }: PlayProps = {}) {
   const dev = useDevToolsContext();
   const [currentPuzzle, setCurrentPuzzle] = useState<Puzzle | null>(null);
   const [messageOrder, setMessageOrder] = useState<string[]>([]);
@@ -88,6 +93,10 @@ export function Play({ previewPuzzle }: PlayProps = {}) {
   }, [dev.forceShowHints]);
 
   useEffect(() => {
+    if (isSolved && onSolved) onSolved();
+  }, [isSolved, onSolved]);
+
+  useEffect(() => {
     if (isSolved || gameOver) {
       if (timeIntervalRef.current) {
         clearInterval(timeIntervalRef.current);
@@ -126,9 +135,6 @@ export function Play({ previewPuzzle }: PlayProps = {}) {
     setShowShake(false);
   };
 
-  const handleNewPuzzle = () => {
-    loadPuzzle();
-  };
 
   const handleTryAgain = () => {
     if (!currentPuzzle) return;
@@ -246,35 +252,41 @@ export function Play({ previewPuzzle }: PlayProps = {}) {
   if (!currentPuzzle) return null;
 
   return (
-    <div className="w-full min-h-screen flex flex-col items-center justify-center px-4 py-6 sm:py-8 animate-fade-in">
+    <div className={`w-full flex flex-col items-center animate-fade-in ${hideHeader ? "px-0 py-0" : "px-4 py-6 sm:py-8 min-h-screen justify-center"}`}>
       <div className="w-full max-w-[600px] mx-auto">
-        <div className="flex flex-wrap justify-between items-start gap-4 mb-4">
-          <div>
-            <h1 className="text-3xl font-medium text-gray-900 mb-1">re:chat</h1>
-            <p className="text-sm sm:text-base text-gray-500">
-              Put the messages in order.
-            </p>
-          </div>
-          <div className="flex flex-col items-end gap-2">
+        <div className={`flex flex-wrap justify-between items-start gap-4 mb-4 ${hideHeader ? "justify-end" : ""}`}>
+          {!hideHeader && (
+            <div>
+              <h1 className="text-3xl font-medium text-gray-900 mb-1">re:chat</h1>
+              <p className="text-sm sm:text-base text-gray-500">
+                Put the messages in order.
+              </p>
+            </div>
+          )}
+          <div className={`flex flex-row justify-between items-center ${hideHeader ? "w-full" : "flex-1 min-w-0"}`}>
             <StrikeIndicator strikes={strikes} />
-            {showHintButton && (
+            {showHintButton ? (
               <HintIcon
                 hints={visibleConstraints}
                 onRevealMore={!allHintsShown ? revealHint : undefined}
                 isHighlighted={!userHasOpenedHint}
                 onOpen={() => setUserHasOpenedHint(true)}
               />
+            ) : (
+              <div className="w-11 h-11 shrink-0" aria-hidden />
             )}
           </div>
         </div>
 
-        <p className="text-sm text-gray-500 mb-3">
+        <p className={`text-sm text-gray-500 mb-3 ${hideHeader ? "hidden" : ""}`}>
           Drag or use arrows to reorder. Put the conversation in chronological
           order.
         </p>
 
         <ul
-          className={`flex flex-col gap-3 mb-6 transition-all rounded-xl p-2 -m-2 min-h-[200px] ${
+          className={`flex flex-col transition-all rounded-xl p-2 -m-2 ${
+            hideHeader ? "gap-2 mb-4 min-h-[140px]" : "gap-3 mb-6 min-h-[200px]"
+          } ${
             isSolved ? "ring-2 ring-green-400 ring-offset-2 bg-green-50/50 rounded-xl" : ""
           } ${gameOver ? "ring-2 ring-red-400 ring-offset-2 bg-red-50/30" : ""} ${
             dev.forceRevealOrder ? "ring-2 ring-blue-400 ring-offset-2" : ""
@@ -324,7 +336,7 @@ export function Play({ previewPuzzle }: PlayProps = {}) {
                     canReorder ? "hover:shadow-md" : ""
                   } ${
                     isSent
-                      ? "rounded-br-md bg-[#34C759] text-white"
+                      ? "rounded-br-md bg-[#007AFF] text-white"
                       : "rounded-bl-md bg-[#E5E5EA] text-gray-900"
                   }`}
                 >
@@ -335,7 +347,7 @@ export function Play({ previewPuzzle }: PlayProps = {}) {
           })}
         </ul>
 
-        {isSolved && (
+        {isSolved && !hideSuccessMessage && (
           <p className="text-green-600 font-medium text-center mb-4">
             You got it.
           </p>
@@ -344,20 +356,12 @@ export function Play({ previewPuzzle }: PlayProps = {}) {
         {gameOver && (
           <div className="text-center mb-4">
             <p className="text-red-600 font-medium mb-3">Out! 3 strikes.</p>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <button
-                onClick={handleTryAgain}
-                className="min-h-[44px] px-6 py-3 bg-gray-900 text-white text-sm font-medium rounded-xl hover:bg-gray-800 transition-colors touch-manipulation"
-              >
-                Try again
-              </button>
-              <button
-                onClick={handleNewPuzzle}
-                className="min-h-[44px] px-6 py-3 border border-gray-300 text-gray-700 text-sm font-medium rounded-xl hover:bg-gray-50 transition-colors touch-manipulation"
-              >
-                New puzzle
-              </button>
-            </div>
+            <button
+              onClick={handleTryAgain}
+              className="min-h-[44px] px-6 py-3 bg-gray-900 text-white text-sm font-medium rounded-xl hover:bg-gray-800 transition-colors touch-manipulation"
+            >
+              Try again
+            </button>
           </div>
         )}
 
@@ -384,12 +388,6 @@ export function Play({ previewPuzzle }: PlayProps = {}) {
                 className="min-h-[44px] px-6 py-3 border border-gray-300 text-gray-700 text-sm font-medium rounded-xl hover:bg-gray-50 disabled:opacity-60 disabled:cursor-not-allowed transition-colors touch-manipulation"
               >
                 Reset
-              </button>
-              <button
-                onClick={handleNewPuzzle}
-                className="min-h-[44px] px-6 py-3 border border-gray-300 text-gray-700 text-sm font-medium rounded-xl hover:bg-gray-50 transition-colors touch-manipulation"
-              >
-                New Puzzle
               </button>
             </div>
           </div>

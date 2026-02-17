@@ -1,10 +1,31 @@
 # re:chat
 
-A logic puzzle game where you reconstruct conversations by reordering chat messages into their correct chronological sequence. Put the messages in order based on conversational tone and constraints.
+Turn your text chats into shareable puzzle games. Create a re:chat from a screenshot or by adding messages manually, then share one link. No sign-up, easy to embed.
 
-## Overview
+## What is re:chat?
 
-re:chat presents scrambled chat messages and asks you to drag or reorder them into the correct order. Use the hints (when available), pay attention to tone and context, and avoid wrong guesses—you get 3 strikes before you're out.
+re:chat lets you turn any text conversation into a fun puzzle. Solvers see the messages in random order and must drag them into the correct chronological sequence. Perfect for sharing funny conversations, memorable moments, or inside jokes with friends.
+
+## Create & Share
+
+1. **Create** – Go to `/create` and either:
+   - **Screenshot** – Drop a chat screenshot (iMessage, WhatsApp, etc.). OCR extracts the text and parses it into messages. Edit if needed.
+   - **Add manually** – Add each message one by one with speaker (A or B) and text.
+
+2. **Set order** – Confirm or reorder the messages. This is the sequence solvers must find.
+
+3. **Add hints** (optional) – Hints help solvers when they’re stuck.
+
+4. **Publish** – Click “Create & get link”. Copy the share link or embed code.
+
+## Share & Embed
+
+- **Share link** – `https://yoursite.com/p/abc123xyz` – send to anyone.
+- **Embed** – Use the iframe code to embed a puzzle in a blog, Notion, etc.
+
+```html
+<iframe src="https://yoursite.com/embed/abc123xyz" width="400" height="500" frameborder="0"></iframe>
+```
 
 ## Getting Started
 
@@ -21,94 +42,60 @@ npm install
 
 ### Development
 
+**Option A – Run everything together (recommended):**
+
 ```bash
+npm run dev:all
+```
+
+This starts the API server and the Vite dev server. Open [http://localhost:5173](http://localhost:5173).
+
+**Option B – Run separately:**
+
+```bash
+# Terminal 1 – API server
+npm run server
+
+# Terminal 2 – Frontend
 npm run dev
 ```
 
-Open [http://localhost:5173](http://localhost:5173) in your browser.
-
-### Build
+### Build & Production
 
 ```bash
 npm run build
+NODE_ENV=production npm run server
 ```
 
-### Preview Production Build
-
-```bash
-npm run preview
-```
+The server serves the built client and the API. Deploy the whole project to Railway, Render, or Fly.io. Persist the `server/data/` directory for the SQLite database.
 
 ## How to Play
 
-1. **Reorder messages** – Drag messages or use the up/down arrows to move them. Put the conversation in chronological order.
-2. **Check Answer** – Click "Check Answer" to see if your order is correct.
-3. **3 Strikes** – Each wrong check adds a strike. At 3 strikes, you're out. Use "Try again" (same puzzle, reset) or "New puzzle" to continue.
-4. **Hints** – A lightbulb icon appears in the header when you struggle (after 1 wrong check or ~45 seconds). It glows to draw attention. Click it to show hints in a popover. Use "Another hint" to reveal more. Click the icon again anytime to view hints.
-5. **Reset** – Reshuffle the current puzzle and clear strikes without loading a new puzzle.
-6. **Incorrect feedback** – Wrong answers show "Wrong order. Try again." near the buttons.
-
-## Conversation Creator
-
-Create custom puzzles at `/create`:
-
-1. **Messages** – Add messages with speaker (A or B) and text.
-2. **Correct order** – Use the up/down controls to set the chronological order.
-3. **Constraints** – Add hint lines that help solvers infer the order.
-4. **Metadata** – Set difficulty (easy/medium/hard), types, tags, and group.
-5. **Actions**
-   - **Save to localStorage** – Store the puzzle locally.
-   - **Preview** – See how it looks as a playable puzzle.
-   - **Export JSON** – Download the puzzle as JSON.
-   - **Import** – Paste JSON and click "Import from JSON above" to load a puzzle.
-
-Built-in puzzles can be loaded as templates to modify and save as your own.
-
-## Dev Mode and Create (Access Code)
-
-Dev mode and the Create page are gated by an access code:
-
-- **Unlock** – Click the lock icon in the nav bar and enter the code `strawberry`.
-- **Create** – The Create link appears in the nav after unlocking.
-- **Dev panel** – Collapsible panel in the bottom-right with:
-  - **Puzzle selector** – Pick a puzzle by ID; filter by difficulty (easy/medium/hard).
-  - **View correct order** – Reveal the solution.
-  - **Skip to win** – Mark the puzzle as solved.
-  - **Show hints** – Reveal all hints.
+1. **Reorder** – Drag messages or use up/down arrows. Put the conversation in chronological order.
+2. **Check Answer** – Click to see if your order is correct.
+3. **3 Strikes** – Wrong guesses add strikes. At 3, you’re out. Use “Try again” to reset or “New puzzle” for another.
+4. **Hints** – A lightbulb icon appears when you’re stuck. Click for hints.
 
 ## Project Structure
 
 ```
-src/
-├── App.tsx              # Router, layout, nav, dev panel
-├── main.tsx
-├── index.css
-├── context/
-│   └── DevToolsContext.tsx
-├── types/
-│   └── puzzle.ts
-├── data/
-│   └── puzzles.ts
-├── hooks/
-│   └── useDevTools.tsx   # Access code + dev panel
-├── pages/
-│   ├── Play.tsx
-│   └── CreatePuzzle.tsx
-└── components/
-    ├── ArrowUpIcon.tsx
-    ├── ArrowDownIcon.tsx
-    ├── StrikeIndicator.tsx
-    ├── HintIcon.tsx
-    └── CodeModal.tsx
+chat'd/
+├── src/                 # React app
+│   ├── api/             # API client (create, get puzzle)
+│   ├── pages/           # Landing, Create, Play, PlayPuzzle, EmbedPuzzle
+│   ├── utils/           # parseChatText (OCR-friendly)
+│   └── components/
+├── server/              # Express + SQLite API
+│   ├── index.js
+│   └── data/            # puzzles.db (gitignored)
+└── package.json
 ```
 
 ## Tech Stack
 
-- React 19
-- TypeScript
-- Vite
-- Tailwind CSS v4
-- React Router
+- React 19, TypeScript, Vite, Tailwind CSS
+- Express, sql.js (SQLite), nanoid
+- Tesseract.js for screenshot OCR
 
 ## License
 
