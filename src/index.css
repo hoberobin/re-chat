@@ -57,3 +57,32 @@
 .hint-glow {
   animation: hintGlow 2s ease-in-out infinite;
 }
+
+@keyframes gradientShift {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.btn-create-gradient {
+  background: linear-gradient(
+    90deg,
+    #ec4899 0%,
+    #8b5cf6 20%,
+    #06b6d4 40%,
+    #10b981 60%,
+    #eab308 80%,
+    #ec4899 100%
+  );
+  background-size: 300% 100%;
+  animation: gradientShift 5s ease-in-out infinite;
+}
+
+.btn-create-gradient:hover {
+  animation-duration: 2.5s;
+  transform: scale(1.02);
+  box-shadow: 0 10px 40px -10px rgba(139, 92, 246, 0.5);
+}

@@ -1,13 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import type { Puzzle } from "../types/puzzle";
-import {
-  shuffle,
-  pickRandomPuzzle,
-  getPuzzleById,
-} from "../data/puzzles";
-import { useDevToolsContext } from "../context/DevToolsContext";
-import { ArrowUpIcon } from "../components/ArrowUpIcon";
-import { ArrowDownIcon } from "../components/ArrowDownIcon";
+import { shuffle } from "../data/puzzles";
+import { ArrowUpIcon, ArrowDownIcon } from "../components/Icons";
 import { StrikeIndicator } from "../components/StrikeIndicator";
 import { HintIcon } from "../components/HintIcon";
 
@@ -17,26 +11,13 @@ const HINT_TIMEOUT_3 = 120;
 const MAX_STRIKES = 3;
 
 interface PlayProps {
-  previewPuzzle?: Puzzle;
+  previewPuzzle: Puzzle;
   onSolved?: () => void;
-  /** When true, hide the "re:chat" header (e.g. when embedded in Landing) */
   hideHeader?: boolean;
-  /** When true, hide the "You got it" message (e.g. parent shows its own) */
   hideSuccessMessage?: boolean;
 }
 
-function initPuzzle(seedId?: string, override?: Puzzle): { puzzle: Puzzle; order: string[] } {
-  const puzzle = override
-    ? override
-    : seedId
-      ? getPuzzleById(seedId) ?? pickRandomPuzzle()
-      : pickRandomPuzzle();
-  const order = shuffle(puzzle.correctOrder);
-  return { puzzle, order };
-}
-
-export function Play({ previewPuzzle, onSolved, hideHeader, hideSuccessMessage }: PlayProps = {}) {
-  const dev = useDevToolsContext();
+export function Play({ previewPuzzle, onSolved, hideHeader, hideSuccessMessage }: PlayProps) {
   const [currentPuzzle, setCurrentPuzzle] = useState<Puzzle | null>(null);
   const [messageOrder, setMessageOrder] = useState<string[]>([]);
   const [isSolved, setIsSolved] = useState(false);
@@ -48,13 +29,11 @@ export function Play({ previewPuzzle, onSolved, hideHeader, hideSuccessMessage }
   const [wrongChecks, setWrongChecks] = useState(0);
   const [userHasOpenedHint, setUserHasOpenedHint] = useState(false);
   const draggedIndexRef = useRef<number | null>(null);
-  const isInitialized = useRef(false);
   const timeIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const loadPuzzle = (seedId?: string, override?: Puzzle) => {
-    const { puzzle, order } = initPuzzle(seedId, override);
+  const loadPuzzle = (puzzle: Puzzle) => {
     setCurrentPuzzle(puzzle);
-    setMessageOrder(order);
+    setMessageOrder(shuffle(puzzle.correctOrder));
     setIsSolved(false);
     setGameOver(false);
     setStrikes(0);
@@ -65,32 +44,8 @@ export function Play({ previewPuzzle, onSolved, hideHeader, hideSuccessMessage }
   };
 
   useEffect(() => {
-    if (!isInitialized.current) {
-      loadPuzzle(dev.seedPuzzleId, previewPuzzle);
-      isInitialized.current = true;
-    }
-  }, []);
-
-  useEffect(() => {
-    if (previewPuzzle) {
-      loadPuzzle(undefined, previewPuzzle);
-    } else if (dev.seedPuzzleId && currentPuzzle?.id !== dev.seedPuzzleId) {
-      loadPuzzle(dev.seedPuzzleId);
-    }
-  }, [dev.seedPuzzleId, previewPuzzle]);
-
-  useEffect(() => {
-    if (dev.forceSkipWin) {
-      setIsSolved(true);
-      setGameOver(false);
-    }
-  }, [dev.forceSkipWin]);
-
-  useEffect(() => {
-    if (dev.forceShowHints) {
-      setHintTier(3);
-    }
-  }, [dev.forceShowHints]);
+    loadPuzzle(previewPuzzle);
+  }, [previewPuzzle]);
 
   useEffect(() => {
     if (isSolved && onSolved) onSolved();
@@ -149,7 +104,7 @@ export function Play({ previewPuzzle, onSolved, hideHeader, hideSuccessMessage }
   };
 
   const handleCheck = () => {
-    if (!currentPuzzle || isSolved || gameOver || dev.forceRevealOrder) return;
+    if (!currentPuzzle || isSolved || gameOver) return;
     const correct = currentPuzzle.correctOrder.every(
       (id, i) => id === messageOrder[i]
     );
@@ -174,7 +129,7 @@ export function Play({ previewPuzzle, onSolved, hideHeader, hideSuccessMessage }
   };
 
   const moveMessage = (index: number, direction: "up" | "down") => {
-    if (isSolved || gameOver || dev.forceRevealOrder) return;
+    if (isSolved || gameOver) return;
     const newIndex = direction === "up" ? index - 1 : index + 1;
     if (newIndex < 0 || newIndex >= messageOrder.length) return;
     setMessageOrder((prev) => {
@@ -185,7 +140,7 @@ export function Play({ previewPuzzle, onSolved, hideHeader, hideSuccessMessage }
   };
 
   const handleDragStart = (e: React.DragEvent, index: number) => {
-    if (isSolved || gameOver || dev.forceRevealOrder) return;
+    if (isSolved || gameOver) return;
     draggedIndexRef.current = index;
     e.dataTransfer.effectAllowed = "move";
     e.dataTransfer.setData("text/plain", String(index));
@@ -213,8 +168,7 @@ export function Play({ previewPuzzle, onSolved, hideHeader, hideSuccessMessage }
       dragIndex === null ||
       dragIndex === dropIndex ||
       isSolved ||
-      gameOver ||
-      dev.forceRevealOrder
+      gameOver
     )
       return;
     setMessageOrder((prev) => {
@@ -233,7 +187,7 @@ export function Play({ previewPuzzle, onSolved, hideHeader, hideSuccessMessage }
     currentPuzzle.constraints.length > 0 &&
     (wrongChecks >= 1 || timeElapsed >= HINT_TIMEOUT_1);
 
-  const effectiveHintTier = dev.forceShowHints ? 3 : hintTier;
+  const effectiveHintTier = hintTier;
   const visibleConstraints =
     currentPuzzle && effectiveHintTier > 0
       ? currentPuzzle.constraints.slice(0, effectiveHintTier)
@@ -242,12 +196,8 @@ export function Play({ previewPuzzle, onSolved, hideHeader, hideSuccessMessage }
   const allHintsShown =
     currentPuzzle && effectiveHintTier >= currentPuzzle.constraints.length;
 
-  const displayOrder =
-    dev.forceRevealOrder && currentPuzzle
-      ? currentPuzzle.correctOrder
-      : messageOrder;
-
-  const canReorder = !isSolved && !gameOver && !dev.forceRevealOrder;
+  const displayOrder = messageOrder;
+  const canReorder = !isSolved && !gameOver;
 
   if (!currentPuzzle) return null;
 
@@ -288,9 +238,7 @@ export function Play({ previewPuzzle, onSolved, hideHeader, hideSuccessMessage }
             hideHeader ? "gap-2 mb-4 min-h-[140px]" : "gap-3 mb-6 min-h-[200px]"
           } ${
             isSolved ? "ring-2 ring-green-400 ring-offset-2 bg-green-50/50 rounded-xl" : ""
-          } ${gameOver ? "ring-2 ring-red-400 ring-offset-2 bg-red-50/30" : ""} ${
-            dev.forceRevealOrder ? "ring-2 ring-blue-400 ring-offset-2" : ""
-          }`}
+          } ${gameOver ? "ring-2 ring-red-400 ring-offset-2 bg-red-50/30" : ""}`}
         >
           {displayOrder.map((id, index) => {
             const msg = currentPuzzle.messages.find((m) => m.id === id);

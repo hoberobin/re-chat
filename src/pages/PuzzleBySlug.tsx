@@ -4,7 +4,11 @@ import { getPuzzle } from "../api/puzzles";
 import type { Puzzle } from "../types/puzzle";
 import { Play } from "./Play";
 
-export function PlayPuzzle() {
+interface PuzzleBySlugProps {
+  embed?: boolean;
+}
+
+export function PuzzleBySlug({ embed = false }: PuzzleBySlugProps) {
   const { id } = useParams<{ id: string }>();
   const [puzzle, setPuzzle] = useState<Puzzle | null>(null);
   const [loading, setLoading] = useState(true);
@@ -25,20 +29,24 @@ export function PlayPuzzle() {
 
   if (loading) {
     return (
-      <div className="w-full min-h-screen flex items-center justify-center">
-        <p className="text-gray-500">Loading puzzle…</p>
+      <div className={`w-full flex items-center justify-center ${embed ? "min-h-[400px]" : "min-h-screen"}`}>
+        <p className={`text-gray-500 ${embed ? "text-sm" : ""}`}>Loading puzzle…</p>
       </div>
     );
   }
 
   if (error || !puzzle) {
+    if (embed) {
+      return (
+        <div className="w-full min-h-[400px] flex items-center justify-center">
+          <p className="text-gray-500 text-sm">Puzzle not found.</p>
+        </div>
+      );
+    }
     return (
       <div className="w-full min-h-screen flex flex-col items-center justify-center gap-4 px-4">
         <p className="text-gray-600">Puzzle not found.</p>
-        <Link
-          to="/"
-          className="text-gray-600 hover:text-gray-900 underline"
-        >
+        <Link to="/" className="text-gray-600 hover:text-gray-900 underline">
           Go home
         </Link>
         <Link
@@ -47,6 +55,14 @@ export function PlayPuzzle() {
         >
           Create your own
         </Link>
+      </div>
+    );
+  }
+
+  if (embed) {
+    return (
+      <div className="min-h-[500px]">
+        <Play previewPuzzle={puzzle} />
       </div>
     );
   }

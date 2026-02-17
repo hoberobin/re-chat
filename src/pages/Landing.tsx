@@ -61,7 +61,7 @@ export function Landing() {
         {/* Create button – outside card so it pops */}
         <Link
           to="/create"
-          className="block w-full text-center py-4 px-6 bg-[#007AFF] text-white text-base font-medium rounded-xl hover:bg-[#0066DD] transition-colors shadow-md hover:shadow-lg"
+          className="block w-full text-center py-4 px-6 text-white text-base font-medium rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 btn-create-gradient cursor-pointer active:scale-[0.98]"
         >
           Create your re:chat
         </Link>

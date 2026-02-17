@@ -1,7 +1,6 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Landing } from "./pages/Landing";
-import { PlayPuzzle } from "./pages/PlayPuzzle";
-import { EmbedPuzzle } from "./pages/EmbedPuzzle";
+import { PuzzleBySlug } from "./pages/PuzzleBySlug";
 import { CreatePuzzle } from "./pages/CreatePuzzle";
 
 function AppContent() {
@@ -11,8 +10,8 @@ function AppContent() {
           <Routes>
             <Route path="/" element={<Landing />} />
             <Route path="/create" element={<CreatePuzzle />} />
-            <Route path="/p/:id" element={<PlayPuzzle />} />
-            <Route path="/embed/:id" element={<EmbedPuzzle />} />
+            <Route path="/p/:id" element={<PuzzleBySlug />} />
+            <Route path="/embed/:id" element={<PuzzleBySlug embed />} />
           </Routes>
         </main>
     </div>

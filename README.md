@@ -1,5 +1,7 @@
 # re:chat
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 Turn your text chats into shareable puzzle games. Create a re:chat from a screenshot or by adding messages manually, then share one link. No sign-up, easy to embed.
 
 ## What is re:chat?
@@ -73,7 +75,7 @@ The server serves the built client and the API. Deploy the whole project to Rail
 
 1. **Reorder** – Drag messages or use up/down arrows. Put the conversation in chronological order.
 2. **Check Answer** – Click to see if your order is correct.
-3. **3 Strikes** – Wrong guesses add strikes. At 3, you’re out. Use “Try again” to reset or “New puzzle” for another.
+3. **3 Strikes** – Wrong guesses add strikes. At 3, you’re out. Use “Try again” to reset.
 4. **Hints** – A lightbulb icon appears when you’re stuck. Click for hints.
 
 ## Project Structure
@@ -82,7 +84,7 @@ The server serves the built client and the API. Deploy the whole project to Rail
 chat'd/
 ├── src/                 # React app
 │   ├── api/             # API client (create, get puzzle)
-│   ├── pages/           # Landing, Create, Play, PlayPuzzle, EmbedPuzzle
+│   ├── pages/           # Landing, Create, Play, PuzzleBySlug
 │   ├── utils/           # parseChatText (OCR-friendly)
 │   └── components/
 ├── server/              # Express + SQLite API
@@ -97,6 +99,10 @@ chat'd/
 - Express, sql.js (SQLite), nanoid
 - Tesseract.js for screenshot OCR
 
+## Contributing
+
+Contributions are welcome. Feel free to open an issue or submit a pull request.
+
 ## License
 
-Private.
+MIT. See [LICENSE](LICENSE).

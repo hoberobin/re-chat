@@ -5,8 +5,7 @@ import { parseChatText } from "../utils/parseChatText";
 import { createPuzzle } from "../api/puzzles";
 import { useScreenshotOCR } from "../hooks/useScreenshotOCR";
 import { Play } from "./Play";
-import { ArrowUpIcon } from "../components/ArrowUpIcon";
-import { ArrowDownIcon } from "../components/ArrowDownIcon";
+import { ArrowUpIcon, ArrowDownIcon } from "../components/Icons";
 
 const MIN_MESSAGES = 2;
 const MAX_MESSAGES = 30;
