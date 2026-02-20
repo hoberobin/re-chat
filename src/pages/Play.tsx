@@ -5,25 +5,81 @@ import { ArrowUpIcon, ArrowDownIcon } from "../components/Icons";
 import { StrikeIndicator } from "../components/StrikeIndicator";
 import { HintIcon } from "../components/HintIcon";
 
+function ShareResultButton({ timeSeconds }: { timeSeconds: number }) {
+  const [copied, setCopied] = useState(false);
+  const text = `I got today's re:chat in ${formatTime(timeSeconds)}. Can you beat it?`;
+  const handleClick = async () => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // ignore
+    }
+  };
+  return (
+    <button
+      type="button"
+      onClick={handleClick}
+      className="mt-3 text-sm text-[#007AFF] hover:underline"
+    >
+      {copied ? "Copied!" : "Share your result"}
+    </button>
+  );
+}
+
 const HINT_TIMEOUT_1 = 45;
 const HINT_TIMEOUT_2 = 90;
 const HINT_TIMEOUT_3 = 120;
 const MAX_STRIKES = 3;
+
+function formatTime(seconds: number): string {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return m > 0 ? `${m}:${s.toString().padStart(2, "0")}` : `0:${s.toString().padStart(2, "0")}`;
+}
+
+export interface DailyPersistedState {
+  date: string;
+  messageOrder: string[];
+  strikes: number;
+  isSolved: boolean;
+  gameOver: boolean;
+  timeElapsed: number;
+}
 
 interface PlayProps {
   previewPuzzle: Puzzle;
   onSolved?: () => void;
   hideHeader?: boolean;
   hideSuccessMessage?: boolean;
+  /** When provided, use this as initial order instead of shuffling (e.g. from daily API) */
+  initialOrder?: string[];
+  /** Daily mode: no Reset/Try again, partial feedback on wrong check, persist state */
+  dailyMode?: boolean;
+  /** Restore from previous session (daily mode only) */
+  persistedState?: DailyPersistedState | null;
+  /** Called when state changes so parent can persist to localStorage (daily mode only) */
+  onPersist?: (state: DailyPersistedState) => void;
 }
 
-export function Play({ previewPuzzle, onSolved, hideHeader, hideSuccessMessage }: PlayProps) {
+export function Play({
+  previewPuzzle,
+  onSolved,
+  hideHeader,
+  hideSuccessMessage,
+  initialOrder,
+  dailyMode,
+  persistedState,
+  onPersist,
+}: PlayProps) {
   const [currentPuzzle, setCurrentPuzzle] = useState<Puzzle | null>(null);
   const [messageOrder, setMessageOrder] = useState<string[]>([]);
   const [isSolved, setIsSolved] = useState(false);
   const [gameOver, setGameOver] = useState(false);
   const [strikes, setStrikes] = useState(0);
   const [showShake, setShowShake] = useState(false);
+  const [lastCorrectCount, setLastCorrectCount] = useState<number | null>(null);
   const [hintTier, setHintTier] = useState(0);
   const [timeElapsed, setTimeElapsed] = useState(0);
   const [wrongChecks, setWrongChecks] = useState(0);
@@ -31,21 +87,51 @@ export function Play({ previewPuzzle, onSolved, hideHeader, hideSuccessMessage }
   const draggedIndexRef = useRef<number | null>(null);
   const timeIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const loadPuzzle = (puzzle: Puzzle) => {
+  const loadPuzzle = (puzzle: Puzzle, order?: string[]) => {
     setCurrentPuzzle(puzzle);
-    setMessageOrder(shuffle(puzzle.correctOrder));
+    setMessageOrder(order ?? shuffle(puzzle.correctOrder));
     setIsSolved(false);
     setGameOver(false);
     setStrikes(0);
     setShowShake(false);
+    setLastCorrectCount(null);
     setHintTier(0);
     setWrongChecks(0);
     setTimeElapsed(0);
   };
 
   useEffect(() => {
-    loadPuzzle(previewPuzzle);
-  }, [previewPuzzle]);
+    const canRestore =
+      dailyMode &&
+      persistedState?.date &&
+      persistedState.messageOrder.length > 0 &&
+      persistedState.messageOrder.length === previewPuzzle.correctOrder.length;
+    if (canRestore) {
+      setCurrentPuzzle(previewPuzzle);
+      setMessageOrder(persistedState.messageOrder);
+      setIsSolved(persistedState.isSolved);
+      setGameOver(persistedState.gameOver);
+      setStrikes(persistedState.strikes);
+      setTimeElapsed(persistedState.timeElapsed);
+      setShowShake(false);
+      setLastCorrectCount(null);
+      return;
+    }
+    loadPuzzle(previewPuzzle, initialOrder);
+  }, [previewPuzzle.id, dailyMode, persistedState?.date ?? ""]);
+
+  useEffect(() => {
+    if (!dailyMode || !onPersist || !currentPuzzle) return;
+    if (messageOrder.length !== currentPuzzle.correctOrder.length) return;
+    onPersist({
+      date: persistedState?.date ?? "",
+      messageOrder,
+      strikes,
+      isSolved,
+      gameOver,
+      timeElapsed,
+    });
+  }, [dailyMode, messageOrder, strikes, isSolved, gameOver, timeElapsed]);
 
   useEffect(() => {
     if (isSolved && onSolved) onSolved();
@@ -109,8 +195,13 @@ export function Play({ previewPuzzle, onSolved, hideHeader, hideSuccessMessage }
       (id, i) => id === messageOrder[i]
     );
     if (correct) {
+      setLastCorrectCount(null);
       setIsSolved(true);
     } else {
+      const correctPositionCount = messageOrder.filter(
+        (id, i) => id === currentPuzzle.correctOrder[i]
+      ).length;
+      setLastCorrectCount(correctPositionCount);
       setWrongChecks((c) => c + 1);
       setStrikes((s) => {
         const next = s + 1;
@@ -181,6 +272,7 @@ export function Play({ previewPuzzle, onSolved, hideHeader, hideSuccessMessage }
   };
 
   const showHintButton =
+    !dailyMode &&
     !isSolved &&
     !gameOver &&
     currentPuzzle &&
@@ -214,7 +306,14 @@ export function Play({ previewPuzzle, onSolved, hideHeader, hideSuccessMessage }
             </div>
           )}
           <div className={`flex flex-row justify-between items-center ${hideHeader ? "w-full" : "flex-1 min-w-0"}`}>
-            <StrikeIndicator strikes={strikes} />
+            <div className="flex items-center gap-3">
+              <StrikeIndicator strikes={strikes} />
+              {dailyMode && !isSolved && !gameOver && (
+                <span className="text-sm text-gray-500 tabular-nums" aria-label={`Time: ${formatTime(timeElapsed)}`}>
+                  {formatTime(timeElapsed)}
+                </span>
+              )}
+            </div>
             {showHintButton ? (
               <HintIcon
                 hints={visibleConstraints}
@@ -296,20 +395,65 @@ export function Play({ previewPuzzle, onSolved, hideHeader, hideSuccessMessage }
         </ul>
 
         {isSolved && !hideSuccessMessage && (
-          <p className="text-green-600 font-medium text-center mb-4">
-            You got it.
-          </p>
+          <div className="text-center mb-4">
+            <p className="text-green-600 font-medium">
+              You got it{timeElapsed > 0 ? ` in ${formatTime(timeElapsed)}` : ""}.
+            </p>
+            {dailyMode && (
+              <>
+                <p className="text-sm text-gray-600 mt-1">See you tomorrow.</p>
+                <ShareResultButton timeSeconds={timeElapsed} />
+              </>
+            )}
+          </div>
         )}
 
         {gameOver && (
           <div className="text-center mb-4">
-            <p className="text-red-600 font-medium mb-3">Out! 3 strikes.</p>
-            <button
-              onClick={handleTryAgain}
-              className="min-h-[44px] px-6 py-3 bg-gray-900 text-white text-sm font-medium rounded-xl hover:bg-gray-800 transition-colors touch-manipulation"
-            >
-              Try again
-            </button>
+            <p className="text-red-600 font-medium mb-3">
+              {dailyMode ? "You're out for today." : "Out! 3 strikes."}
+            </p>
+            {dailyMode && (
+              <p className="text-sm text-gray-600 mb-3">See you tomorrow for a new puzzle.</p>
+            )}
+            {dailyMode && currentPuzzle && (
+              <div className="mb-4 text-left rounded-xl bg-gray-50 border border-gray-200 p-4">
+                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">
+                  Correct order
+                </p>
+                <ul className="flex flex-col gap-2">
+                  {currentPuzzle.correctOrder.map((id) => {
+                    const msg = currentPuzzle.messages.find((m) => m.id === id);
+                    if (!msg) return null;
+                    const isSent = msg.speaker === "A";
+                    return (
+                      <li
+                        key={id}
+                        className={`flex ${isSent ? "justify-end" : ""}`}
+                      >
+                        <span
+                          className={`inline-block max-w-[85%] px-4 py-2 rounded-2xl text-sm ${
+                            isSent
+                              ? "rounded-br-md bg-[#007AFF] text-white"
+                              : "rounded-bl-md bg-[#E5E5EA] text-gray-900"
+                          }`}
+                        >
+                          {msg.text}
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            )}
+            {!dailyMode && (
+              <button
+                onClick={handleTryAgain}
+                className="min-h-[44px] px-6 py-3 bg-gray-900 text-white text-sm font-medium rounded-xl hover:bg-gray-800 transition-colors touch-manipulation"
+              >
+                Try again
+              </button>
+            )}
           </div>
         )}
 
@@ -319,7 +463,9 @@ export function Play({ previewPuzzle, onSolved, hideHeader, hideSuccessMessage }
           >
             {showShake && (
               <p className="text-sm text-red-600 font-medium text-center">
-                Wrong order. Try again.
+                {dailyMode && lastCorrectCount !== null
+                  ? `Not quite — ${lastCorrectCount} of ${currentPuzzle!.correctOrder.length} in correct position. Use that to narrow it down.`
+                  : "Wrong order. Try again."}
               </p>
             )}
             <div className="flex flex-col sm:flex-row gap-3">
@@ -330,13 +476,15 @@ export function Play({ previewPuzzle, onSolved, hideHeader, hideSuccessMessage }
               >
                 Check Answer
               </button>
-              <button
-                onClick={handleReset}
-                disabled={isSolved}
-                className="min-h-[44px] px-6 py-3 border border-gray-300 text-gray-700 text-sm font-medium rounded-xl hover:bg-gray-50 disabled:opacity-60 disabled:cursor-not-allowed transition-colors touch-manipulation"
-              >
-                Reset
-              </button>
+              {!dailyMode && (
+                <button
+                  onClick={handleReset}
+                  disabled={isSolved}
+                  className="min-h-[44px] px-6 py-3 border border-gray-300 text-gray-700 text-sm font-medium rounded-xl hover:bg-gray-50 disabled:opacity-60 disabled:cursor-not-allowed transition-colors touch-manipulation"
+                >
+                  Reset
+                </button>
+              )}
             </div>
           </div>
         )}

@@ -1,18 +1,22 @@
 @import "tailwindcss";
 
 @layer base {
+  html {
+    height: 100%;
+    height: 100dvh;
+  }
+
   body {
     @apply bg-white text-gray-900 antialiased;
-    min-height: 100vh;
-    min-height: 100dvh;
+    height: 100%;
+    height: 100dvh;
     margin: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding-top: env(safe-area-inset-top);
-    padding-bottom: env(safe-area-inset-bottom);
-    padding-left: env(safe-area-inset-left);
-    padding-right: env(safe-area-inset-right);
+    overflow: hidden; /* DailyPuzzle controls its own scroll via position:fixed */
+  }
+
+  #root {
+    height: 100%;
+    height: 100dvh;
   }
 }
 
@@ -86,3 +90,27 @@
   transform: scale(1.02);
   box-shadow: 0 10px 40px -10px rgba(139, 92, 246, 0.5);
 }
+
+@keyframes redactedPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(0, 0, 0, 0); }
+  50% { box-shadow: 0 0 8px 2px rgba(0, 0, 0, 0.25); }
+}
+
+@keyframes bubbleFadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes resultSlideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.animate-bubble { animation: bubbleFadeIn 0.3s ease-out forwards; }
+.animate-result { animation: resultSlideUp 0.4s ease-out forwards; }
+.redacted-pulse { animation: redactedPulse 2s ease-in-out infinite; }
