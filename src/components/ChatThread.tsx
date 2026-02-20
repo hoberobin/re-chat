@@ -15,6 +15,10 @@ interface ChatThreadHeaderProps {
   isGroup: boolean;
   uniqueSenders: number;
   premise?: string;
+  /** When set (e.g. daily flow), use as main line (hook) instead of chatName */
+  title?: string;
+  /** When set, use as subline instead of "Group · N people" */
+  subtitle?: string;
 }
 
 export function ChatThreadHeader({
@@ -22,9 +26,13 @@ export function ChatThreadHeader({
   isGroup,
   uniqueSenders,
   premise,
+  title,
+  subtitle,
 }: ChatThreadHeaderProps) {
   const [taskOpen, setTaskOpen] = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
+  const displayTitle = title ?? chatName;
+  const displaySubtitle = subtitle ?? (isGroup ? `Group · ${uniqueSenders} people` : undefined);
 
   useEffect(() => {
     if (!taskOpen) return;
@@ -60,11 +68,11 @@ export function ChatThreadHeader({
     >
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontWeight: 600, fontSize: 15, color: "#1c1c1e" }}>
-          {chatName}
+          {displayTitle}
         </div>
-        {isGroup && (
+        {displaySubtitle != null && displaySubtitle !== "" && (
           <div style={{ fontSize: 12, color: "#6b6b70", marginTop: 1 }}>
-            Group · {uniqueSenders} people
+            {displaySubtitle}
           </div>
         )}
       </div>

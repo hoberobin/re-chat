@@ -180,10 +180,10 @@ export function DailyPuzzle() {
     }, 600);
   };
 
-  const hasRedacted = puzzle?.messages.some((m) => m.is_redacted) ?? false;
-  const questionPrompt = hasRedacted
-    ? "What did the redacted message say?"
-    : "Who spoiled it?";
+  // Use last sentence of premise as the short question (e.g. "Who spoiled it?")
+  const questionPrompt = puzzle
+    ? (puzzle.premise.split(/\.\s+/).filter(Boolean).pop() ?? puzzle.premise).trim()
+    : "";
 
   const uniqueSenders = puzzle
     ? new Set(puzzle.messages.map((m) => m.sender)).size
@@ -227,6 +227,8 @@ export function DailyPuzzle() {
             isGroup={puzzle.is_group}
             uniqueSenders={uniqueSenders}
             premise={puzzle.premise}
+            title={puzzle.title}
+            subtitle={`Today's puzzle · ${questionPrompt}`}
           />
         )}
 
@@ -351,6 +353,7 @@ export function DailyPuzzle() {
               ) : (
                 <ResultReveal
                   correct={result.correct}
+                  correctAnswerText={puzzle.options[result.correct_option_index]}
                   explanation={result.explanation}
                   stats={result.stats}
                 />

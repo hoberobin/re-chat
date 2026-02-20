@@ -27,7 +27,9 @@ export function AnswerOptions({
         const isCorrect = correctIndex === i;
         const senderName = getOptionSenderName(option);
         const senderColor = senderName ? getSenderColor(senderName) : "#d1d1d6";
-        const { namePart, restPart } = splitOptionText(option);
+        const { namePart } = splitOptionText(option);
+        // Show only the name (text before " — "), never the hint/rest
+        const displayLabel = namePart ? namePart : option;
 
         let bg = "#fff";
         let border = "1.5px solid #d1d1d6";
@@ -159,16 +161,12 @@ export function AnswerOptions({
               {LABELS[i]}
             </div>
 
-            {/* Option text — name in sender color when present (matches chat) */}
+            {/* Option text — only the name, in sender color when not revealed */}
             <span style={{ flex: 1, lineHeight: 1.4 }}>
-              {namePart && restPart && !revealed ? (
-                <>
-                  <span style={{ fontWeight: 600, color: senderColor }}>{namePart}</span>
-                  {" — "}
-                  <span style={{ color: "inherit" }}>{restPart}</span>
-                </>
+              {senderName && !revealed ? (
+                <span style={{ fontWeight: 600, color: senderColor }}>{displayLabel}</span>
               ) : (
-                option
+                displayLabel
               )}
             </span>
 
