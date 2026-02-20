@@ -18,8 +18,9 @@ const puzzles = [
     id: "the-surprise",
     date: today,
     title: "The Surprise",
+    // Premise count must match unique senders (Jordan, Priya, Tom = 3)
     premise:
-      "You're reading a group chat between four friends planning a surprise party for Maya. One of them already told her. Who spoiled it?",
+      "You're reading a group chat between three friends planning a surprise party for Maya. One of them already told her. Who spoiled it?",
     chat_name: "Maya's Bday 🎂",
     is_group: true,
     messages: [

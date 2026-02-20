@@ -39,10 +39,10 @@ export function ResultReveal({ correct, explanation, stats }: ResultRevealProps)
         style={{
           background: "#f2f2f7",
           borderRadius: 14,
-          padding: "18px 18px",
+          padding: "20px 18px",
           fontSize: 15,
           color: "#1c1c1e",
-          lineHeight: 1.55,
+          lineHeight: 1.6,
         }}
       >
         {explanation}

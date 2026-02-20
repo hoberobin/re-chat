@@ -57,20 +57,19 @@ function SkeletonHeader() {
       style={{
         display: "flex",
         alignItems: "center",
-        justifyContent: "center",
         padding: "10px 16px",
         borderBottom: "1px solid #e5e5ea",
-        background: "#f9f9f9",
-        minHeight: 56,
+        background: "#fff",
+        minHeight: 44,
         flexShrink: 0,
       }}
     >
       <div
         style={{
-          width: 120,
-          height: 14,
+          width: 100,
+          height: 12,
           background: "#e5e5ea",
-          borderRadius: 7,
+          borderRadius: 6,
           animation: "pulse 1.5s ease-in-out infinite",
         }}
       />
@@ -227,6 +226,7 @@ export function DailyPuzzle() {
             chatName={puzzle.chat_name}
             isGroup={puzzle.is_group}
             uniqueSenders={uniqueSenders}
+            premise={puzzle.premise}
           />
         )}
 
@@ -293,6 +293,7 @@ export function DailyPuzzle() {
               isGroup={puzzle.is_group}
               premise={puzzle.premise}
               showHeader={false}
+              showPremiseInBody={false}
             />
           )}
         </div>
@@ -315,7 +316,7 @@ export function DailyPuzzle() {
                 : {}),
             }}
           >
-            <div style={{ padding: "16px 14px 24px", paddingBottom: "max(24px, env(safe-area-inset-bottom))" }}>
+            <div style={{ padding: "20px 16px 28px", paddingBottom: "max(28px, env(safe-area-inset-bottom))" }}>
               {result == null ? (
                 <>
                   <p
@@ -323,11 +324,21 @@ export function DailyPuzzle() {
                       fontSize: 15,
                       fontWeight: 600,
                       color: "#1c1c1e",
-                      marginBottom: 12,
+                      marginBottom: 4,
                       textAlign: "center",
                     }}
                   >
-                    ❓ {questionPrompt}
+                    {questionPrompt}
+                  </p>
+                  <p
+                    style={{
+                      fontSize: 13,
+                      color: "#6b6b70",
+                      marginBottom: 14,
+                      textAlign: "center",
+                    }}
+                  >
+                    Pick the answer that fits the clues in the chat.
                   </p>
                   <AnswerOptions
                     options={puzzle.options}

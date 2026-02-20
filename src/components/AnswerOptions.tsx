@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { getSenderColor, getOptionSenderName, splitOptionText } from "../utils/chatColors";
 
 const LABELS = ["A", "B", "C"];
 
@@ -24,9 +25,13 @@ export function AnswerOptions({
       {options.map((option, i) => {
         const isSelected = selectedIndex === i;
         const isCorrect = correctIndex === i;
+        const senderName = getOptionSenderName(option);
+        const senderColor = senderName ? getSenderColor(senderName) : "#d1d1d6";
+        const { namePart, restPart } = splitOptionText(option);
 
         let bg = "#fff";
         let border = "1.5px solid #d1d1d6";
+        let borderLeft = `3px solid ${senderColor}`;
         let color = "#000";
         let opacity = 1;
         let icon: ReactNode = null;
@@ -35,6 +40,7 @@ export function AnswerOptions({
           if (isCorrect) {
             bg = "#34C759";
             border = "1.5px solid #34C759";
+            borderLeft = "3px solid rgba(255,255,255,0.4)";
             color = "#fff";
             icon = (
               <svg
@@ -56,6 +62,7 @@ export function AnswerOptions({
           } else if (isSelected && !isCorrect) {
             bg = "#FF3B30";
             border = "1.5px solid #FF3B30";
+            borderLeft = "3px solid rgba(255,255,255,0.4)";
             color = "#fff";
             icon = (
               <svg
@@ -85,8 +92,12 @@ export function AnswerOptions({
         return (
           <button
             key={i}
+            type="button"
+            className="answer-option"
             onClick={() => !disabled && onSelect(i)}
             disabled={disabled}
+            aria-pressed={isSelected}
+            aria-label={option}
             style={{
               display: "flex",
               alignItems: "center",
@@ -95,6 +106,7 @@ export function AnswerOptions({
               padding: "13px 16px",
               background: bg,
               border,
+              borderLeft,
               borderRadius: 12,
               color,
               fontSize: 15,
@@ -147,8 +159,18 @@ export function AnswerOptions({
               {LABELS[i]}
             </div>
 
-            {/* Option text */}
-            <span style={{ flex: 1, lineHeight: 1.4 }}>{option}</span>
+            {/* Option text — name in sender color when present (matches chat) */}
+            <span style={{ flex: 1, lineHeight: 1.4 }}>
+              {namePart && restPart && !revealed ? (
+                <>
+                  <span style={{ fontWeight: 600, color: senderColor }}>{namePart}</span>
+                  {" — "}
+                  <span style={{ color: "inherit" }}>{restPart}</span>
+                </>
+              ) : (
+                option
+              )}
+            </span>
 
             {/* Correct/wrong icon */}
             {icon}

@@ -114,3 +114,8 @@
 .animate-bubble { animation: bubbleFadeIn 0.3s ease-out forwards; }
 .animate-result { animation: resultSlideUp 0.4s ease-out forwards; }
 .redacted-pulse { animation: redactedPulse 2s ease-in-out infinite; }
+
+.answer-option:focus-visible {
+  outline: 2px solid #007AFF;
+  outline-offset: 2px;
+}

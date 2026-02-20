@@ -1,79 +1,123 @@
+import { useState, useRef, useEffect } from "react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faQuestionCircle } from "@fortawesome/free-solid-svg-icons";
 import type { ChatMessage } from "../types/puzzle";
+import { getSenderColor } from "../utils/chatColors";
 
 const FONT = '-apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif';
 
-const SENDER_COLORS = ["#FF6B6B", "#4ECDC4", "#45B7D1", "#96CEB4"];
-
-function senderColor(sender: string): string {
-  let hash = 0;
-  for (let i = 0; i < sender.length; i++) {
-    hash = (hash << 5) - hash + sender.charCodeAt(i);
-    hash |= 0;
-  }
-  return SENDER_COLORS[Math.abs(hash) % SENDER_COLORS.length];
-}
-
 // ---------------------------------------------------------------------------
-// Exported header — render this outside the scroll area so it stays sticky
+// Exported header — compact; "Your task" in icon popover to save space
 // ---------------------------------------------------------------------------
 
 interface ChatThreadHeaderProps {
   chatName: string;
   isGroup: boolean;
   uniqueSenders: number;
+  premise?: string;
 }
 
 export function ChatThreadHeader({
   chatName,
   isGroup,
   uniqueSenders,
+  premise,
 }: ChatThreadHeaderProps) {
+  const [taskOpen, setTaskOpen] = useState(false);
+  const popoverRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!taskOpen) return;
+    const handleClick = (e: MouseEvent) => {
+      if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) setTaskOpen(false);
+    };
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setTaskOpen(false);
+    };
+    document.addEventListener("mousedown", handleClick);
+    document.addEventListener("keydown", handleKey);
+    return () => {
+      document.removeEventListener("mousedown", handleClick);
+      document.removeEventListener("keydown", handleKey);
+    };
+  }, [taskOpen]);
+
   return (
     <div
       style={{
+        position: "relative",
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        padding: "10px 16px",
-        borderBottom: "1px solid #e5e5ea",
-        background: "#f9f9f9",
-        minHeight: 56,
+        gap: 12,
+        padding: "10px 12px 10px 16px",
+        minHeight: 44,
+        borderBottom: "1px solid #e0e0e0",
+        background: "#fff",
         fontFamily: FONT,
         flexShrink: 0,
       }}
     >
-      {/* Back chevron */}
-      <div style={{ width: 32, color: "#007AFF" }}>
-        <svg width="12" height="20" viewBox="0 0 12 20" fill="none">
-          <path
-            d="M10 2L2 10L10 18"
-            stroke="#007AFF"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-      </div>
-
-      {/* Center: name + optional subtitle */}
-      <div style={{ textAlign: "center", flex: 1 }}>
-        <div style={{ fontWeight: 600, fontSize: 16, color: "#000" }}>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontWeight: 600, fontSize: 15, color: "#1c1c1e" }}>
           {chatName}
         </div>
         {isGroup && (
-          <div style={{ fontSize: 12, color: "#8e8e93", marginTop: 1 }}>
-            {uniqueSenders} people
+          <div style={{ fontSize: 12, color: "#6b6b70", marginTop: 1 }}>
+            Group · {uniqueSenders} people
           </div>
         )}
       </div>
 
-      {/* Video icon */}
-      <div style={{ width: 32, color: "#007AFF", textAlign: "right" }}>
-        <svg width="22" height="16" viewBox="0 0 22 16" fill="none">
-          <rect x="1" y="2" width="14" height="12" rx="2" stroke="#007AFF" strokeWidth="1.8" />
-          <path d="M15 6L21 3V13L15 10" stroke="#007AFF" strokeWidth="1.8" strokeLinejoin="round" />
-        </svg>
-      </div>
+      {premise && (
+        <div ref={popoverRef} style={{ position: "relative", flexShrink: 0 }}>
+          <button
+            type="button"
+            onClick={() => setTaskOpen((o) => !o)}
+            aria-label="Your task / instructions"
+            aria-expanded={taskOpen}
+            style={{
+              width: 36,
+              height: 36,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              border: "none",
+              background: taskOpen ? "#f0f4ff" : "transparent",
+              borderRadius: 8,
+              color: "#5b7cff",
+              cursor: "pointer",
+            }}
+          >
+            <FontAwesomeIcon icon={faQuestionCircle} style={{ fontSize: 20 }} />
+          </button>
+
+          {taskOpen && (
+            <div
+              style={{
+                position: "absolute",
+                top: "100%",
+                right: 0,
+                marginTop: 6,
+                width: "min(320px, calc(100vw - 24px))",
+                background: "#fff",
+                borderRadius: 12,
+                boxShadow: "0 4px 20px rgba(0,0,0,0.12)",
+                border: "1px solid #e5e5ea",
+                padding: "14px 16px",
+                zIndex: 50,
+              }}
+            >
+              <div style={{ fontSize: 11, fontWeight: 700, color: "#5b7cff", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>
+                Your task
+              </div>
+              <div style={{ fontSize: 14, color: "#1c1c1e", lineHeight: 1.5, fontWeight: 500 }}>
+                {premise}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -88,6 +132,8 @@ interface ChatThreadProps {
   isGroup: boolean;
   premise?: string;
   showHeader?: boolean;
+  /** When false, premise is not shown in body (use header task icon instead) */
+  showPremiseInBody?: boolean;
 }
 
 export function ChatThread({
@@ -96,8 +142,8 @@ export function ChatThread({
   isGroup,
   premise,
   showHeader = true,
+  showPremiseInBody = true,
 }: ChatThreadProps) {
-  const selfSender = messages.length > 0 ? messages[0].sender : null;
   const uniqueSenders = new Set(messages.map((m) => m.sender)).size;
 
   return (
@@ -114,23 +160,28 @@ export function ChatThread({
           chatName={chatName}
           isGroup={isGroup}
           uniqueSenders={uniqueSenders}
+          premise={showPremiseInBody ? undefined : premise}
         />
       )}
 
-      {/* Premise text */}
-      {premise && (
+      {/* Premise in body only when showPremiseInBody (e.g. standalone ChatThread) */}
+      {premise && showPremiseInBody && (
         <div
           style={{
-            textAlign: "center",
-            fontSize: 13,
-            color: "#8e8e93",
-            fontStyle: "italic",
-            padding: "8px 16px",
-            borderBottom: "1px solid #f2f2f7",
-            background: "#fafafa",
+            padding: "14px 18px",
+            background: "#f0f4ff",
+            borderBottom: "1px solid #dde2f0",
+            borderLeft: "3px solid #5b7cff",
+            marginBottom: 12,
+            borderRadius: "0 8px 8px 0",
           }}
         >
-          {premise}
+          <div style={{ fontSize: 11, fontWeight: 700, color: "#5b7cff", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>
+            Your task
+          </div>
+          <div style={{ fontSize: 15, color: "#1c1c1e", lineHeight: 1.5, fontWeight: 500 }}>
+            {premise}
+          </div>
         </div>
       )}
 
@@ -145,7 +196,6 @@ export function ChatThread({
         }}
       >
         {messages.map((msg) => {
-          const isSelf = msg.sender === selfSender;
           return (
             <div key={msg.id}>
               {msg.show_timestamp && (
@@ -161,12 +211,12 @@ export function ChatThread({
                 </div>
               )}
 
-              {isGroup && !isSelf && (
+              {isGroup && (
                 <div
                   style={{
                     fontSize: 12,
                     fontWeight: 500,
-                    color: senderColor(msg.sender),
+                    color: getSenderColor(msg.sender),
                     marginLeft: 12,
                     marginBottom: 2,
                     marginTop: 6,
@@ -180,7 +230,7 @@ export function ChatThread({
                 className="animate-bubble"
                 style={{
                   display: "flex",
-                  justifyContent: isSelf ? "flex-end" : "flex-start",
+                  justifyContent: "flex-start",
                   marginBottom: 2,
                 }}
               >
@@ -189,9 +239,9 @@ export function ChatThread({
                     maxWidth: "75%",
                     padding: msg.is_redacted ? "10px 14px" : "9px 14px",
                     borderRadius: 18,
-                    ...(isSelf
-                      ? { background: "#1C8EF9", color: "#fff", borderBottomRightRadius: 4 }
-                      : { background: "#E9E9EB", color: "#000", borderBottomLeftRadius: 4 }),
+                    borderBottomLeftRadius: 4,
+                    background: "#E9E9EB",
+                    color: "#000",
                     fontSize: 16,
                     lineHeight: 1.4,
                   }}
