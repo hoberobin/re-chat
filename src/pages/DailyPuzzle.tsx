@@ -4,6 +4,7 @@ import { AnswerOptions } from "../components/AnswerOptions";
 import { ResultReveal } from "../components/ResultReveal";
 import { getDailyPuzzle, submitAnswer } from "../api/puzzles";
 import type { DailyPuzzle as DailyPuzzleType, PuzzleResult } from "../types/puzzle";
+import { getOptionSenderName } from "../utils/chatColors";
 
 const FONT = '-apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif';
 
@@ -353,7 +354,10 @@ export function DailyPuzzle() {
               ) : (
                 <ResultReveal
                   correct={result.correct}
-                  correctAnswerText={puzzle.options[result.correct_option_index]}
+                  correctAnswerText={
+                    getOptionSenderName(puzzle.options[result.correct_option_index]) ??
+                    puzzle.options[result.correct_option_index]
+                  }
                   explanation={result.explanation}
                   stats={result.stats}
                 />
