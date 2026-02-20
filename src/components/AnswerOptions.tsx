@@ -9,6 +9,8 @@ interface AnswerOptionsProps {
   selectedIndex: number | null;
   disabled: boolean;
   correctIndex: number | null;
+  /** Order of senders so option labels get the same colors as in the chat */
+  orderedSenders?: string[];
 }
 
 export function AnswerOptions({
@@ -17,6 +19,7 @@ export function AnswerOptions({
   selectedIndex,
   disabled,
   correctIndex,
+  orderedSenders,
 }: AnswerOptionsProps) {
   const revealed = selectedIndex !== null && correctIndex !== null;
 
@@ -26,7 +29,7 @@ export function AnswerOptions({
         const isSelected = selectedIndex === i;
         const isCorrect = correctIndex === i;
         const senderName = getOptionSenderName(option);
-        const senderColor = senderName ? getSenderColor(senderName) : "#d1d1d6";
+        const senderColor = senderName ? getSenderColor(senderName, orderedSenders) : "#d1d1d6";
         const { namePart } = splitOptionText(option);
         // Show only the name (text before " — "), never the hint/rest
         const displayLabel = namePart ? namePart : option;

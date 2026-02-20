@@ -1,16 +1,9 @@
 import { useState, useEffect } from "react";
-import { ChatThread, ChatThreadHeader } from "../components/ChatThread";
-import { AnswerOptions } from "../components/AnswerOptions";
-import { ResultReveal } from "../components/ResultReveal";
+import { DailyPuzzleView } from "../components/DailyPuzzleView";
 import { getDailyPuzzle, submitAnswer } from "../api/puzzles";
 import type { DailyPuzzle as DailyPuzzleType, PuzzleResult } from "../types/puzzle";
-import { getOptionSenderName } from "../utils/chatColors";
 
 const FONT = '-apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif';
-
-// ---------------------------------------------------------------------------
-// Local storage helpers
-// ---------------------------------------------------------------------------
 
 const STORAGE_KEY = "rechat-mystery";
 
@@ -48,10 +41,6 @@ function getTodayDateString(): string {
   );
 }
 
-// ---------------------------------------------------------------------------
-// Skeleton header (shown during load so the chrome doesn't jump)
-// ---------------------------------------------------------------------------
-
 function SkeletonHeader() {
   return (
     <div
@@ -77,10 +66,6 @@ function SkeletonHeader() {
     </div>
   );
 }
-
-// ---------------------------------------------------------------------------
-// Skeleton messages (fills the scroll area during load)
-// ---------------------------------------------------------------------------
 
 function SkeletonMessages() {
   const bars = [
@@ -121,10 +106,6 @@ function SkeletonMessages() {
     </div>
   );
 }
-
-// ---------------------------------------------------------------------------
-// Main page
-// ---------------------------------------------------------------------------
 
 export function DailyPuzzle() {
   const today = getTodayDateString();
@@ -181,18 +162,6 @@ export function DailyPuzzle() {
     }, 600);
   };
 
-  // Use last sentence of premise as the short question (e.g. "Who spoiled it?")
-  const questionPrompt = puzzle
-    ? (puzzle.premise.split(/\.\s+/).filter(Boolean).pop() ?? puzzle.premise).trim()
-    : "";
-
-  const uniqueSenders = puzzle
-    ? new Set(puzzle.messages.map((m) => m.sender)).size
-    : 0;
-
-  // -------------------------------------------------------------------------
-  // Outer shell — fixed to the full viewport, max-width 430px centered
-  // -------------------------------------------------------------------------
   return (
     <div
       style={{
@@ -201,10 +170,9 @@ export function DailyPuzzle() {
         display: "flex",
         justifyContent: "center",
         alignItems: "stretch",
-        background: "#e5e5ea", // subtle gray shows on wide desktop screens
+        background: "#e5e5ea",
       }}
     >
-      {/* Phone column */}
       <div
         style={{
           width: "100%",
@@ -217,153 +185,66 @@ export function DailyPuzzle() {
           fontFamily: FONT,
         }}
       >
-        {/* ---------------------------------------------------------------- */}
-        {/* STICKY HEADER — never scrolls                                     */}
-        {/* ---------------------------------------------------------------- */}
         {loading || !puzzle ? (
-          <SkeletonHeader />
-        ) : (
-          <ChatThreadHeader
-            chatName={puzzle.chat_name}
-            isGroup={puzzle.is_group}
-            uniqueSenders={uniqueSenders}
-            premise={puzzle.premise}
-            title={puzzle.title}
-            subtitle={`Today's puzzle · ${questionPrompt}`}
-          />
-        )}
-
-        {/* ---------------------------------------------------------------- */}
-        {/* SCROLLABLE CHAT ONLY — messages + fake input bar                  */}
-        {/* ---------------------------------------------------------------- */}
-        <div
-          style={{
-            flex: 1,
-            minHeight: "45vh",
-            overflowY: "auto",
-            overflowX: "hidden",
-            WebkitOverflowScrolling: "touch" as React.CSSProperties["WebkitOverflowScrolling"],
-            display: "flex",
-            flexDirection: "column",
-          }}
-        >
-          {/* Loading state */}
-          {loading && <SkeletonMessages />}
-
-          {/* Error state */}
-          {!loading && error && (
+          <>
+            <SkeletonHeader />
             <div
               style={{
+                flex: 1,
+                minHeight: "45vh",
+                overflowY: "auto",
                 display: "flex",
                 flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                flex: 1,
-                minHeight: 200,
-                gap: 12,
-                padding: "24px",
-                textAlign: "center",
               }}
             >
-              <p style={{ color: "#FF3B30", fontSize: 16 }}>{error}</p>
-              <p style={{ color: "#8e8e93", fontSize: 14 }}>
-                Make sure the server is running (npm run dev:all)
-              </p>
-              <button
-                onClick={() => window.location.reload()}
-                style={{
-                  marginTop: 8,
-                  padding: "10px 24px",
-                  background: "#007AFF",
-                  color: "#fff",
-                  border: "none",
-                  borderRadius: 10,
-                  fontSize: 15,
-                  cursor: "pointer",
-                  fontFamily: FONT,
-                }}
-              >
-                Retry
-              </button>
-            </div>
-          )}
-
-          {/* Chat only (no header — it's sticky above) */}
-          {!loading && puzzle && (
-            <ChatThread
-              messages={puzzle.messages}
-              chatName={puzzle.chat_name}
-              isGroup={puzzle.is_group}
-              premise={puzzle.premise}
-              showHeader={false}
-              showPremiseInBody={false}
-            />
-          )}
-        </div>
-
-        {/* ---------------------------------------------------------------- */}
-        {/* FIXED BOTTOM SECTION — during: question + options; after: reveal only */}
-        {/* ---------------------------------------------------------------- */}
-        {!loading && puzzle && (
-          <div
-            style={{
-              flexShrink: 0,
-              background: "#fff",
-              borderTop: "1px solid #e5e5ea",
-              ...(result
-                ? {
-                    maxHeight: "55vh",
-                    overflowY: "auto" as const,
-                    WebkitOverflowScrolling: "touch" as React.CSSProperties["WebkitOverflowScrolling"],
-                  }
-                : {}),
-            }}
-          >
-            <div style={{ padding: "20px 16px 28px", paddingBottom: "max(28px, env(safe-area-inset-bottom))" }}>
-              {result == null ? (
-                <>
-                  <p
+              {loading && <SkeletonMessages />}
+              {!loading && error && (
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flex: 1,
+                    minHeight: 200,
+                    gap: 12,
+                    padding: "24px",
+                    textAlign: "center",
+                  }}
+                >
+                  <p style={{ color: "#FF3B30", fontSize: 16 }}>{error}</p>
+                  <p style={{ color: "#8e8e93", fontSize: 14 }}>
+                    Make sure the server is running (npm run dev:all)
+                  </p>
+                  <button
+                    onClick={() => window.location.reload()}
                     style={{
+                      marginTop: 8,
+                      padding: "10px 24px",
+                      background: "#007AFF",
+                      color: "#fff",
+                      border: "none",
+                      borderRadius: 10,
                       fontSize: 15,
-                      fontWeight: 600,
-                      color: "#1c1c1e",
-                      marginBottom: 4,
-                      textAlign: "center",
+                      cursor: "pointer",
+                      fontFamily: FONT,
                     }}
                   >
-                    {questionPrompt}
-                  </p>
-                  <p
-                    style={{
-                      fontSize: 13,
-                      color: "#6b6b70",
-                      marginBottom: 14,
-                      textAlign: "center",
-                    }}
-                  >
-                    Pick the answer that fits the clues in the chat.
-                  </p>
-                  <AnswerOptions
-                    options={puzzle.options}
-                    onSelect={handleSelect}
-                    selectedIndex={selectedIndex}
-                    disabled={submitting || selectedIndex !== null}
-                    correctIndex={null}
-                  />
-                </>
-              ) : (
-                <ResultReveal
-                  correct={result.correct}
-                  correctAnswerText={
-                    getOptionSenderName(puzzle.options[result.correct_option_index]) ??
-                    puzzle.options[result.correct_option_index]
-                  }
-                  explanation={result.explanation}
-                  stats={result.stats}
-                />
+                    Retry
+                  </button>
+                </div>
               )}
             </div>
-          </div>
+          </>
+        ) : (
+          <DailyPuzzleView
+            puzzle={puzzle}
+            selectedIndex={selectedIndex}
+            onSelectOption={handleSelect}
+            submitting={submitting}
+            result={result}
+            subtitle={`Today's puzzle · ${(puzzle.premise.split(/\.\s+/).filter(Boolean).pop() ?? puzzle.premise).trim()}`}
+          />
         )}
       </div>
     </div>

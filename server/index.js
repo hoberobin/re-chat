@@ -118,9 +118,9 @@ app.get("/api/daily", (req, res) => {
   try {
     const today = new Date().toISOString().slice(0, 10);
 
-    // Try to find puzzle for today
+    // Try to find puzzle for today (ORDER BY id so result is deterministic if multiple match)
     let stmt = db.prepare(
-      "SELECT id, data FROM puzzles WHERE json_extract(data, '$.date') = ? LIMIT 1"
+      "SELECT id, data FROM puzzles WHERE json_extract(data, '$.date') = ? ORDER BY id ASC LIMIT 1"
     );
     stmt.bind([today]);
     let puzzleRow = null;
@@ -264,6 +264,180 @@ app.get("/api/daily/result/:date", (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to check play status" });
+  }
+});
+
+// POST /api/daily/puzzles — create one daily puzzle (dev only)
+app.post("/api/daily/puzzles", guardDevOnly, (req, res) => {
+  try {
+    const result = validateAndNormalizeDailyPuzzle(req.body, null);
+    if (result.error) {
+      return res.status(400).json({ error: result.error });
+    }
+    db.run("INSERT OR REPLACE INTO puzzles (id, data) VALUES (?, ?)", [
+      result.payload.id,
+      JSON.stringify(result.payload),
+    ]);
+    saveDb();
+    res.status(201).json({ id: result.payload.id, date: result.payload.date });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to create puzzle" });
+  }
+});
+
+function guardDevOnly(req, res, next) {
+  if (process.env.NODE_ENV === "production") {
+    return res.status(403).json({ error: "Not allowed in production" });
+  }
+  next();
+}
+
+// GET /api/daily/puzzles — list all daily puzzles (dev only)
+app.get("/api/daily/puzzles", guardDevOnly, (req, res) => {
+  try {
+    const stmt = db.prepare(
+      "SELECT id, data FROM puzzles WHERE json_extract(data, '$.date') IS NOT NULL ORDER BY json_extract(data, '$.date') DESC"
+    );
+    const rows = [];
+    while (stmt.step()) {
+      const row = stmt.getAsObject();
+      const data = JSON.parse(row.data);
+      rows.push({ id: row.id, date: data.date, title: data.title || "Untitled" });
+    }
+    stmt.free();
+    res.json(rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to list puzzles" });
+  }
+});
+
+// GET /api/daily/puzzles/:id — get one daily puzzle for editing (dev only)
+app.get("/api/daily/puzzles/:id", guardDevOnly, (req, res) => {
+  try {
+    const { id } = req.params;
+    const stmt = db.prepare("SELECT id, data FROM puzzles WHERE id = ?");
+    stmt.bind([id]);
+    if (!stmt.step()) {
+      stmt.free();
+      return res.status(404).json({ error: "Puzzle not found" });
+    }
+    const row = stmt.getAsObject();
+    stmt.free();
+    const data = JSON.parse(row.data);
+    if (data.date == null) {
+      return res.status(404).json({ error: "Not a daily puzzle" });
+    }
+    res.json({ id: row.id, ...data });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to fetch puzzle" });
+  }
+});
+
+function validateAndNormalizeDailyPuzzle(puzzle, idFromUrl) {
+  if (!puzzle || typeof puzzle !== "object") {
+    return { error: "Body must be a puzzle object" };
+  }
+  const {
+    date,
+    title,
+    premise,
+    chat_name,
+    is_group,
+    messages,
+    options,
+    correct_option_index,
+    explanation,
+  } = puzzle;
+
+  if (!date || typeof date !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    return { error: "Valid date (YYYY-MM-DD) required" };
+  }
+  if (!title || typeof title !== "string" || !title.trim()) {
+    return { error: "Title required" };
+  }
+  if (!premise || typeof premise !== "string" || !premise.trim()) {
+    return { error: "Premise required" };
+  }
+  if (!chat_name || typeof chat_name !== "string" || !chat_name.trim()) {
+    return { error: "Chat name required" };
+  }
+  if (!Array.isArray(messages) || messages.length < 2) {
+    return { error: "At least 2 messages required" };
+  }
+  for (let i = 0; i < messages.length; i++) {
+    const m = messages[i];
+    if (!m || typeof m.sender !== "string" || typeof m.text !== "string") {
+      return { error: `Message ${i + 1}: sender and text required` };
+    }
+  }
+  if (!Array.isArray(options) || options.length < 2) {
+    return { error: "At least 2 options required" };
+  }
+  const idx = Number(correct_option_index);
+  if (!Number.isInteger(idx) || idx < 0 || idx >= options.length) {
+    return { error: "correct_option_index must be 0 to options.length - 1" };
+  }
+  if (explanation === undefined || explanation === null || String(explanation).trim() === "") {
+    return { error: "Explanation required" };
+  }
+
+  const id = idFromUrl || (puzzle.id && String(puzzle.id).trim()) || nanoid(10);
+  return {
+    payload: {
+      id,
+      date,
+      title: String(title).trim(),
+      premise: String(premise).trim(),
+      chat_name: String(chat_name).trim(),
+      is_group: Boolean(is_group),
+      messages: messages.map((m) => ({
+        id: m.id ?? messages.indexOf(m) + 1,
+        sender: String(m.sender).trim(),
+        text: String(m.text).trim(),
+        is_redacted: Boolean(m.is_redacted),
+        timestamp: String(m.timestamp ?? "").trim() || "12:00 PM",
+        show_timestamp: Boolean(m.show_timestamp),
+      })),
+      options: options.map((o) => String(o).trim()).filter(Boolean),
+      correct_option_index: idx,
+      explanation: String(explanation).trim(),
+    },
+  };
+}
+
+// PUT /api/daily/puzzles/:id — update daily puzzle (dev only)
+app.put("/api/daily/puzzles/:id", guardDevOnly, (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = validateAndNormalizeDailyPuzzle(req.body, id);
+    if (result.error) {
+      return res.status(400).json({ error: result.error });
+    }
+    db.run("INSERT OR REPLACE INTO puzzles (id, data) VALUES (?, ?)", [
+      result.payload.id,
+      JSON.stringify(result.payload),
+    ]);
+    saveDb();
+    res.json({ id: result.payload.id, date: result.payload.date });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to update puzzle" });
+  }
+});
+
+// DELETE /api/daily/puzzles/:id — delete daily puzzle (dev only)
+app.delete("/api/daily/puzzles/:id", guardDevOnly, (req, res) => {
+  try {
+    const { id } = req.params;
+    db.run("DELETE FROM puzzles WHERE id = ?", [id]);
+    saveDb();
+    res.status(204).send();
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to delete puzzle" });
   }
 });
 

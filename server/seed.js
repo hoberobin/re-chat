@@ -1,6 +1,10 @@
 // server/seed.js — seed the database with starter puzzles
-// Requires the server to be running: npm run server (or npm run dev:all)
-// Then run: npm run seed
+//
+// 1. Start the server: npm run server (or npm run dev:all)
+// 2. After editing puzzles or dates below, run: npm run seed
+//
+// The DB is only updated when you run the seed script; changing this file
+// alone does not change which puzzle is shown until you re-run seed.
 
 const API_URL = process.env.API_URL || "http://localhost:3001";
 
@@ -15,10 +19,34 @@ const tomorrow = getDateString(1);
 
 const puzzles = [
   {
+    id: "the-lunch-order",
+    date: tomorrow,
+    title: "The Lunch Order",
+    premise:
+      "Three coworkers are deciding where to order lunch. One of them already ordered from somewhere else and didn't tell the group. Who already ordered?",
+    chat_name: "Lunch Bunch",
+    is_group: true,
+    messages: [
+      { id: 1, sender: "Sam", text: "where are we ordering from today", is_redacted: false, timestamp: "12:01 PM", show_timestamp: true },
+      { id: 2, sender: "Alex", text: "I'm good with anything", is_redacted: false, timestamp: "12:02 PM", show_timestamp: false },
+      { id: 3, sender: "Jamie", text: "how about that new place on 5th", is_redacted: false, timestamp: "12:03 PM", show_timestamp: false },
+      { id: 4, sender: "Sam", text: "sure, let me get the menu", is_redacted: false, timestamp: "12:04 PM", show_timestamp: false },
+      { id: 5, sender: "Alex", text: "actually I already ate", is_redacted: false, timestamp: "12:05 PM", show_timestamp: false },
+      { id: 6, sender: "Jamie", text: "what since when", is_redacted: false, timestamp: "12:05 PM", show_timestamp: false },
+      { id: 7, sender: "Alex", text: "grabbed a sandwich earlier, sorry", is_redacted: false, timestamp: "12:06 PM", show_timestamp: false },
+      { id: 8, sender: "Sam", text: "we were all in the kitchen at 11:30 though", is_redacted: false, timestamp: "12:07 PM", show_timestamp: false },
+      { id: 9, sender: "Alex", text: "yeah I went out after that", is_redacted: false, timestamp: "12:08 PM", show_timestamp: false },
+    ],
+    options: ["Sam", "Alex", "Jamie"],
+    correct_option_index: 1,
+    explanation:
+      "Alex said they 'already ate' and 'grabbed a sandwich earlier' — but Sam points out they were all in the kitchen at 11:30. Alex's alibi ('I went out after that') is vague. Sam and Jamie are actively trying to order; Alex is the one who already ordered elsewhere.",
+  },
+  {
     id: "the-surprise",
     date: today,
     title: "The Surprise",
-    // Premise count must match unique senders (Jordan, Priya, Tom = 3)
+    // Premise count must match unique senders and options (Jordan, Priya, Tom = 3)
     premise:
       "You're reading a group chat between three friends planning a surprise party for Maya. One of them already told her. Who spoiled it?",
     chat_name: "Maya's Bday 🎂",
@@ -142,30 +170,7 @@ const puzzles = [
     explanation:
       "Priya knew Maya was avoiding dairy 'from a text last week' — specific knowledge with no obvious source. Jordan's reaction 'wait how do you know that' confirms the suspicion. Tom's confusion throughout is genuine. Priya's alibi is thin.",
   },
-  {
-    id: "the-lunch-order",
-    date: tomorrow,
-    title: "The Lunch Order",
-    premise:
-      "Three coworkers are deciding where to order lunch. One of them already ordered from somewhere else and didn't tell the group. Who already ordered?",
-    chat_name: "Lunch Bunch",
-    is_group: true,
-    messages: [
-      { id: 1, sender: "Sam", text: "where are we ordering from today", is_redacted: false, timestamp: "12:01 PM", show_timestamp: true },
-      { id: 2, sender: "Alex", text: "I'm good with anything", is_redacted: false, timestamp: "12:02 PM", show_timestamp: false },
-      { id: 3, sender: "Jamie", text: "how about that new place on 5th", is_redacted: false, timestamp: "12:03 PM", show_timestamp: false },
-      { id: 4, sender: "Sam", text: "sure, let me get the menu", is_redacted: false, timestamp: "12:04 PM", show_timestamp: false },
-      { id: 5, sender: "Alex", text: "actually I already ate", is_redacted: false, timestamp: "12:05 PM", show_timestamp: false },
-      { id: 6, sender: "Jamie", text: "what since when", is_redacted: false, timestamp: "12:05 PM", show_timestamp: false },
-      { id: 7, sender: "Alex", text: "grabbed a sandwich earlier, sorry", is_redacted: false, timestamp: "12:06 PM", show_timestamp: false },
-      { id: 8, sender: "Sam", text: "we were all in the kitchen at 11:30 though", is_redacted: false, timestamp: "12:07 PM", show_timestamp: false },
-      { id: 9, sender: "Alex", text: "yeah I went out after that", is_redacted: false, timestamp: "12:08 PM", show_timestamp: false },
-    ],
-    options: ["Sam", "Alex", "Jamie"],
-    correct_option_index: 1,
-    explanation:
-      "Alex said they 'already ate' and 'grabbed a sandwich earlier' — but Sam points out they were all in the kitchen at 11:30. Alex's alibi ('I went out after that') is vague. Sam and Jamie are actively trying to order; Alex is the one who already ordered elsewhere.",
-  },
+  
 ];
 
 async function seed() {

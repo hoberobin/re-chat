@@ -1,8 +1,26 @@
 // Shared sender colors — must match between ChatThread (message labels) and AnswerOptions (choice labels)
 // Darker, more saturated tones for better contrast and accessibility on light backgrounds
-const SENDER_COLORS = ["#C24141", "#0D9488", "#2563EB", "#15803D"];
+const SENDER_COLORS = ["#C24141", "#0D9488", "#2563EB", "#15803D", "#B45309", "#7C3AED"];
 
-export function getSenderColor(sender: string): string {
+/** Order of first appearance of senders in messages. Pass to getSenderColor so each person gets a unique color. */
+export function getOrderedSenders(messages: { sender: string }[]): string[] {
+  const seen = new Set<string>();
+  const order: string[] = [];
+  for (const m of messages) {
+    if (!seen.has(m.sender)) {
+      seen.add(m.sender);
+      order.push(m.sender);
+    }
+  }
+  return order;
+}
+
+export function getSenderColor(sender: string, orderedSenders?: string[]): string {
+  if (orderedSenders?.length) {
+    const index = orderedSenders.indexOf(sender);
+    if (index !== -1) return SENDER_COLORS[index % SENDER_COLORS.length];
+  }
+  // Fallback when no ordered list (e.g. CreatePuzzle): hash so same name is consistent
   let hash = 0;
   for (let i = 0; i < sender.length; i++) {
     hash = (hash << 5) - hash + sender.charCodeAt(i);

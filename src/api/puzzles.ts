@@ -1,5 +1,5 @@
 import type { Puzzle } from "../types/legacy";
-import type { DailyPuzzle, PuzzleResult } from "../types/puzzle";
+import type { DailyPuzzle, DailyPuzzleCreatePayload, PuzzleResult } from "../types/puzzle";
 
 const API_BASE =
   import.meta.env.VITE_API_URL ??
@@ -139,4 +139,74 @@ export async function submitAnswer(
     throw new Error(err?.error ?? `Failed to submit answer (${res.status})`);
   }
   return res.json();
+}
+
+/** Creates a daily puzzle (dev only). Server rejects in production. */
+export async function createDailyPuzzle(
+  payload: DailyPuzzleCreatePayload
+): Promise<{ id: string; date: string }> {
+  const res = await fetch(`${API_BASE}/api/daily/puzzles`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err?.error ?? `Failed to create puzzle (${res.status})`);
+  }
+  return res.json();
+}
+
+export interface DailyPuzzleListItem {
+  id: string;
+  date: string;
+  title: string;
+}
+
+/** Lists all daily puzzles (dev only). */
+export async function listDailyPuzzles(): Promise<DailyPuzzleListItem[]> {
+  const res = await fetch(`${API_BASE}/api/daily/puzzles`);
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err?.error ?? `Failed to list puzzles (${res.status})`);
+  }
+  return res.json();
+}
+
+/** Fetches one daily puzzle for editing (dev only). Full payload including correct_option_index and explanation. */
+export async function getDailyPuzzleForEdit(id: string): Promise<DailyPuzzleCreatePayload> {
+  const res = await fetch(`${API_BASE}/api/daily/puzzles/${encodeURIComponent(id)}`);
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err?.error ?? `Failed to fetch puzzle (${res.status})`);
+  }
+  return res.json();
+}
+
+/** Updates a daily puzzle (dev only). */
+export async function updateDailyPuzzle(
+  id: string,
+  payload: DailyPuzzleCreatePayload
+): Promise<{ id: string; date: string }> {
+  const res = await fetch(`${API_BASE}/api/daily/puzzles/${encodeURIComponent(id)}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err?.error ?? `Failed to update puzzle (${res.status})`);
+  }
+  return res.json();
+}
+
+/** Deletes a daily puzzle (dev only). */
+export async function deleteDailyPuzzle(id: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/api/daily/puzzles/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err?.error ?? `Failed to delete puzzle (${res.status})`);
+  }
 }

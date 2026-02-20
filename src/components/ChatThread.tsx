@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faQuestionCircle } from "@fortawesome/free-solid-svg-icons";
 import type { ChatMessage } from "../types/puzzle";
-import { getSenderColor } from "../utils/chatColors";
+import { getSenderColor, getOrderedSenders } from "../utils/chatColors";
 
 const FONT = '-apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif';
 
@@ -117,7 +117,7 @@ export function ChatThreadHeader({
               }}
             >
               <div style={{ fontSize: 11, fontWeight: 700, color: "#5b7cff", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>
-                Your task
+                How it works
               </div>
               <div style={{ fontSize: 14, color: "#1c1c1e", lineHeight: 1.5, fontWeight: 500 }}>
                 {premise}
@@ -142,6 +142,8 @@ interface ChatThreadProps {
   showHeader?: boolean;
   /** When false, premise is not shown in body (use header task icon instead) */
   showPremiseInBody?: boolean;
+  /** Order of senders for consistent unique colors; computed from messages if omitted */
+  orderedSenders?: string[];
 }
 
 export function ChatThread({
@@ -151,8 +153,10 @@ export function ChatThread({
   premise,
   showHeader = true,
   showPremiseInBody = true,
+  orderedSenders,
 }: ChatThreadProps) {
   const uniqueSenders = new Set(messages.map((m) => m.sender)).size;
+  const senderOrder = orderedSenders ?? getOrderedSenders(messages);
 
   return (
     <div
@@ -185,7 +189,7 @@ export function ChatThread({
           }}
         >
           <div style={{ fontSize: 11, fontWeight: 700, color: "#5b7cff", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>
-            Your task
+            How it works
           </div>
           <div style={{ fontSize: 15, color: "#1c1c1e", lineHeight: 1.5, fontWeight: 500 }}>
             {premise}
@@ -224,7 +228,7 @@ export function ChatThread({
                   style={{
                     fontSize: 12,
                     fontWeight: 500,
-                    color: getSenderColor(msg.sender),
+                    color: getSenderColor(msg.sender, senderOrder),
                     marginLeft: 12,
                     marginBottom: 2,
                     marginTop: 6,

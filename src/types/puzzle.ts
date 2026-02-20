@@ -34,5 +34,19 @@ export interface PuzzleResult {
   };
 }
 
+/** Payload for creating a daily puzzle (dev mode). Includes answer and explanation. */
+export interface DailyPuzzleCreatePayload {
+  id?: string;
+  date: string;
+  title: string;
+  premise: string;
+  chat_name: string;
+  is_group: boolean;
+  messages: ChatMessage[];
+  options: string[];
+  correct_option_index: number;
+  explanation: string;
+}
+
 // Re-export legacy types so existing imports from this file still resolve.
 export type { Message, Puzzle } from "./legacy";

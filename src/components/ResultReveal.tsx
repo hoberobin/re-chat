@@ -27,7 +27,7 @@ export function ResultReveal({
       style={{
         display: "flex",
         flexDirection: "column",
-        gap: 16,
+        gap: 8,
         fontFamily: FONT,
       }}
     >
