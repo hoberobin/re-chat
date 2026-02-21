@@ -1,11 +1,9 @@
-import { BrowserRouter, Routes, Route, Link, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { DailyPuzzle } from "./pages/DailyPuzzle";
-import { Landing } from "./pages/Landing";
-import { PuzzleBySlug } from "./pages/PuzzleBySlug";
-import { Practice } from "./pages/Practice";
 import { DailyPuzzlesList } from "./pages/DailyPuzzlesList";
 import { DailyPuzzleForm } from "./pages/DailyPuzzleForm";
 import { Box, Button } from "@mantine/core";
+import { Link } from "react-router-dom";
 
 const isDevMode = import.meta.env.VITE_DEV_MODE === "true";
 
@@ -29,14 +27,9 @@ function AppContent() {
       <Box component="main">
         <Routes>
           <Route path="/" element={<DailyPuzzle />} />
-          <Route path="/classic" element={<Landing />} />
           {isDevMode && <Route path="/puzzle" element={<DailyPuzzlesList />} />}
           {isDevMode && <Route path="/puzzle/new" element={<DailyPuzzleForm />} />}
           {isDevMode && <Route path="/puzzle/:id" element={<DailyPuzzleForm />} />}
-          <Route path="/create-daily" element={<Navigate to="/puzzle/new" replace />} />
-          <Route path="/practice" element={<Practice />} />
-          <Route path="/p/:id" element={<PuzzleBySlug />} />
-          <Route path="/embed/:id" element={<PuzzleBySlug embed />} />
         </Routes>
       </Box>
     </Box>

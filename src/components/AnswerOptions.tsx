@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { getSenderColor, getOptionSenderName, splitOptionText } from "../utils/chatColors";
+import { getSenderColor, getOptionSenderName, splitOptionText, isKnownSender } from "../utils/chatColors";
 import { Stack, Box } from "@mantine/core";
 
 const LABELS = ["A", "B", "C"];
@@ -28,14 +28,36 @@ export function AnswerOptions({
       {options.map((option, i) => {
         const isSelected = selectedIndex === i;
         const isCorrect = correctIndex === i;
+
+        // Only apply sender colors if the option name maps to an actual chat participant
         const senderName = getOptionSenderName(option);
-        const senderColor = senderName ? getSenderColor(senderName, orderedSenders) : "#d1d1d6";
-        const { namePart } = splitOptionText(option);
-        const displayLabel = namePart ? namePart : option;
+        const isSender = isKnownSender(senderName, orderedSenders);
+        const senderColor = isSender ? getSenderColor(senderName!, orderedSenders) : undefined;
+
+        const { namePart, restPart } = splitOptionText(option);
+
+        // Build the display label — colored only when it's a real sender
+        const displayLabel: ReactNode = isSender && namePart ? (
+          <>
+            <span style={{ fontWeight: 600, color: revealed ? "inherit" : senderColor }}>
+              {namePart}
+            </span>
+            {restPart && (
+              <span style={{ fontWeight: 400, color: revealed ? "inherit" : "#636366" }}>
+                {" — "}{restPart}
+              </span>
+            )}
+          </>
+        ) : (
+          option
+        );
 
         let bg = "#fff";
         let border = "1.5px solid #d1d1d6";
-        let borderLeft = `3px solid ${senderColor}`;
+        // Only show a colored left border when the option is a sender
+        let borderLeft = isSender && senderColor
+          ? `3px solid ${senderColor}`
+          : "3px solid #e5e5ea";
         let color = "#000";
         let opacity = 1;
         let icon: ReactNode = null;
@@ -134,15 +156,7 @@ export function AnswerOptions({
               {LABELS[i]}
             </Box>
 
-            <span
-              style={{
-                flex: 1,
-                minWidth: 0,
-                lineHeight: 1.4,
-                fontWeight: senderName && !revealed ? 600 : undefined,
-                color: senderName && !revealed ? senderColor : "inherit",
-              }}
-            >
+            <span style={{ flex: 1, minWidth: 0, lineHeight: 1.4 }}>
               {displayLabel}
             </span>
 

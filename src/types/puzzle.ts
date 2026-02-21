@@ -1,5 +1,3 @@
-// New types for the redacted mystery puzzle format.
-
 export interface ChatMessage {
   id: number;
   sender: string;
@@ -48,5 +46,3 @@ export interface DailyPuzzleCreatePayload {
   explanation: string;
 }
 
-// Re-export legacy types so existing imports from this file still resolve.
-export type { Message, Puzzle } from "./legacy";

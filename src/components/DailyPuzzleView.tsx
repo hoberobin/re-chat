@@ -2,7 +2,7 @@ import { ChatThread, ChatThreadHeader } from "./ChatThread";
 import { AnswerOptions } from "./AnswerOptions";
 import { ResultReveal } from "./ResultReveal";
 import type { DailyPuzzle, PuzzleResult } from "../types/puzzle";
-import { getOptionSenderName, getOrderedSenders } from "../utils/chatColors";
+import { getOrderedSenders } from "../utils/chatColors";
 import { Box, Stack, Text } from "@mantine/core";
 
 export interface DailyPuzzleViewProps {
@@ -12,6 +12,45 @@ export interface DailyPuzzleViewProps {
   submitting?: boolean;
   result?: PuzzleResult | null;
   subtitle?: string;
+  streak?: number;
+}
+
+/** Format "2026-02-20" → "Feb 20" */
+function formatPuzzleDate(dateStr: string): string {
+  const [year, month, day] = dateStr.split("-").map(Number);
+  return new Date(year, month - 1, day).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+  });
+}
+
+/**
+ * Split premise into context sentences + a final question sentence.
+ * The last sentence (often ending in ?) is shown bold; the rest is lighter context.
+ */
+function PremiseCard({ premise }: { premise: string }) {
+  const parts = premise.split(/(?<=[.?!])\s+/).filter(Boolean);
+  const question = parts.length > 1 ? parts.pop()! : parts[0] ?? "";
+  const context = parts.join(" ");
+
+  return (
+    <Box
+      style={{
+        background: "#f2f2f7",
+        borderRadius: 12,
+        padding: "12px 14px",
+      }}
+    >
+      {context && (
+        <Text size="sm" c="dimmed" lh={1.55} mb={6}>
+          {context}
+        </Text>
+      )}
+      <Text size="sm" fw={600} c="dark" lh={1.55}>
+        {question}
+      </Text>
+    </Box>
+  );
 }
 
 export function DailyPuzzleView({
@@ -21,11 +60,9 @@ export function DailyPuzzleView({
   submitting = false,
   result = null,
   subtitle,
+  streak,
 }: DailyPuzzleViewProps) {
-  const questionPrompt = (puzzle.premise.split(/\.\s+/).filter(Boolean).pop() ?? puzzle.premise).trim();
-  const uniqueSenders = new Set(puzzle.messages.map((m) => m.sender)).size;
   const orderedSenders = getOrderedSenders(puzzle.messages);
-  const displaySubtitle = subtitle ?? `Today's puzzle · ${questionPrompt}`;
 
   return (
     <Box
@@ -39,15 +76,34 @@ export function DailyPuzzleView({
         overflow: "hidden",
       }}
     >
-      <ChatThreadHeader
-        chatName={puzzle.chat_name}
-        isGroup={puzzle.is_group}
-        uniqueSenders={uniqueSenders}
-        premise={puzzle.premise}
-        title={puzzle.title}
-        subtitle={displaySubtitle}
-      />
+      {/* App brand strip */}
+      <Box
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          padding: "5px 16px",
+          borderBottom: "1px solid #f0f0f0",
+          background: "#fff",
+          flexShrink: 0,
+        }}
+      >
+        <Text
+          size="xs"
+          fw={800}
+          style={{ color: "#007AFF", letterSpacing: "0.01em" }}
+        >
+          Re:Chat
+        </Text>
+        <Text size="xs" c="dimmed">
+          {subtitle === "Preview" ? "Preview" : formatPuzzleDate(puzzle.date)}
+        </Text>
+      </Box>
 
+      {/* Chat header */}
+      <ChatThreadHeader chatName={puzzle.chat_name} />
+
+      {/* Scrollable message area */}
       <Box
         style={{
           flex: 1,
@@ -63,13 +119,13 @@ export function DailyPuzzleView({
           messages={puzzle.messages}
           chatName={puzzle.chat_name}
           isGroup={puzzle.is_group}
-          premise={puzzle.premise}
           showHeader={false}
           showPremiseInBody={false}
           orderedSenders={orderedSenders}
         />
       </Box>
 
+      {/* Answer / result panel */}
       <Box
         style={{
           flexShrink: 0,
@@ -77,32 +133,32 @@ export function DailyPuzzleView({
           borderTop: "1px solid #e5e5ea",
           ...(result
             ? {
-                maxHeight: "55vh",
+                maxHeight: "58vh",
                 overflowY: "auto" as const,
                 WebkitOverflowScrolling: "touch" as React.CSSProperties["WebkitOverflowScrolling"],
               }
             : {}),
         }}
       >
-        <Box style={{ padding: "20px 16px 28px", paddingBottom: "max(28px, env(safe-area-inset-bottom))" }}>
+        <Box
+          style={{
+            padding: "16px 16px 28px",
+            paddingBottom: "max(28px, env(safe-area-inset-bottom))",
+          }}
+        >
           {result != null ? (
             <ResultReveal
               correct={result.correct}
               correctAnswerText={
-                getOptionSenderName(puzzle.options[result.correct_option_index]) ??
-                puzzle.options[result.correct_option_index]
+                puzzle.options[result.correct_option_index] ?? undefined
               }
               explanation={result.explanation}
               stats={result.stats}
+              streak={streak}
             />
           ) : (
-            <Stack gap={14}>
-              <Text size="md" fw={600} c="dark" ta="center" mb={4}>
-                {questionPrompt}
-              </Text>
-              <Text size="sm" c="dimmed" ta="center" mb={14}>
-                Pick the answer that fits the clues in the chat.
-              </Text>
+            <Stack gap={12}>
+              <PremiseCard premise={puzzle.premise} />
               <AnswerOptions
                 options={puzzle.options}
                 onSelect={onSelectOption ?? (() => {})}

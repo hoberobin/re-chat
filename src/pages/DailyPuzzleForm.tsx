@@ -89,7 +89,7 @@ export function DailyPuzzleForm() {
 
   const [draft, setDraft] = useState<DailyPuzzleCreatePayload | null>(isCreate ? defaultDraft() : null);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [publishError, setPublishError] = useState<string | null>(null);
+  const [publishErrors, setPublishErrors] = useState<string[]>([]);
   const [publishSuccess, setPublishSuccess] = useState<{ id: string; date: string } | null>(null);
   const [publishing, setPublishing] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -113,7 +113,7 @@ export function DailyPuzzleForm() {
     value: DailyPuzzleCreatePayload[K]
   ) => {
     setDraft((prev) => (prev ? { ...prev, [key]: value } : null));
-    setPublishError(null);
+    setPublishErrors([]);
     setPublishSuccess(null);
   }, []);
 
@@ -125,7 +125,7 @@ export function DailyPuzzleForm() {
       );
       return { ...prev, messages: next };
     });
-    setPublishError(null);
+    setPublishErrors([]);
     setPublishSuccess(null);
   }, []);
 
@@ -197,13 +197,13 @@ export function DailyPuzzleForm() {
   const handleSave = async () => {
     const errs = validationErrors();
     if (errs.length) {
-      setPublishError(errs.join(". "));
+      setPublishErrors(errs);
       return;
     }
     const payload = buildPayload();
     if (!payload) return;
     setPublishing(true);
-    setPublishError(null);
+    setPublishErrors([]);
     setPublishSuccess(null);
     try {
       if (isCreate) {
@@ -214,7 +214,7 @@ export function DailyPuzzleForm() {
         setPublishSuccess(result);
       }
     } catch (e) {
-      setPublishError(e instanceof Error ? e.message : "Failed to save puzzle");
+      setPublishErrors([e instanceof Error ? e.message : "Failed to save puzzle"]);
     } finally {
       setPublishing(false);
     }
@@ -224,13 +224,13 @@ export function DailyPuzzleForm() {
     if (!id || isCreate) return;
     if (!window.confirm("Delete this puzzle? This cannot be undone.")) return;
     setDeleting(true);
-    setPublishError(null);
+    setPublishErrors([]);
     try {
       await deleteDailyPuzzle(id);
       navigate("/puzzle");
       return;
     } catch (e) {
-      setPublishError(e instanceof Error ? e.message : "Failed to delete");
+      setPublishErrors([e instanceof Error ? e.message : "Failed to delete"]);
     } finally {
       setDeleting(false);
     }
@@ -329,12 +329,6 @@ export function DailyPuzzleForm() {
               radius="sm"
               styles={{ label: { fontSize: 13, fontWeight: 600 } }}
             />
-            <Checkbox
-              label="Group chat"
-              checked={draft.is_group}
-              onChange={(e) => update("is_group", e.target.checked)}
-              size="sm"
-            />
             <TextInput
               label="Release date"
               type="date"
@@ -414,6 +408,14 @@ export function DailyPuzzleForm() {
                       onChange={(e) => updateMessage(i, "show_timestamp", e.target.checked)}
                     />
                   </Group>
+                  <Checkbox
+                    label="Hide message content"
+                    description="Blacks out this message for players (optional)"
+                    size="xs"
+                    checked={msg.is_redacted}
+                    onChange={(e) => updateMessage(i, "is_redacted", e.target.checked)}
+                    styles={{ description: { fontSize: 10, color: "#8e8e93" } }}
+                  />
                 </Stack>
               </Paper>
             ))}
@@ -470,9 +472,17 @@ export function DailyPuzzleForm() {
             styles={{ label: { fontSize: 13, fontWeight: 600 }, input: { resize: "vertical" } }}
           />
 
-          {publishError && (
+          {publishErrors.length > 0 && (
             <Alert color="red" variant="light" mt={16} radius="sm">
-              {publishError}
+              {publishErrors.length === 1 ? (
+                publishErrors[0]
+              ) : (
+                <ul style={{ margin: 0, paddingLeft: 18 }}>
+                  {publishErrors.map((err, i) => (
+                    <li key={i} style={{ marginBottom: 2 }}>{err}</li>
+                  ))}
+                </ul>
+              )}
             </Alert>
           )}
           {publishSuccess && (

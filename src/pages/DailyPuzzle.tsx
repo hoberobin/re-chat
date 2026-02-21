@@ -1,11 +1,18 @@
 import { useState, useEffect } from "react";
 import { DailyPuzzleView } from "../components/DailyPuzzleView";
+import { OnboardingOverlay } from "../components/OnboardingOverlay";
 import { getDailyPuzzle, submitAnswer } from "../api/puzzles";
 import type { DailyPuzzle as DailyPuzzleType, PuzzleResult } from "../types/puzzle";
 
 const FONT = '-apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif';
 
+// ─── Storage keys ────────────────────────────────────────────────────────────
+
 const STORAGE_KEY = "rechat-mystery";
+const HISTORY_KEY = "rechat-history";
+const ONBOARDED_KEY = "rechat-onboarded";
+
+// ─── Today's result (single-day) ─────────────────────────────────────────────
 
 interface StoredDailyResult {
   date: string;
@@ -30,6 +37,62 @@ function saveStoredResult(data: StoredDailyResult): void {
   } catch {}
 }
 
+// ─── Play history (multi-day, for streak) ────────────────────────────────────
+
+type HistoryMap = Record<string, { correct: boolean }>;
+
+function getHistory(): HistoryMap {
+  try {
+    const raw = localStorage.getItem(HISTORY_KEY);
+    return raw ? (JSON.parse(raw) as HistoryMap) : {};
+  } catch {
+    return {};
+  }
+}
+
+function saveToHistory(date: string, correct: boolean): void {
+  try {
+    const history = getHistory();
+    history[date] = { correct };
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+  } catch {}
+}
+
+function computeStreak(history: HistoryMap): number {
+  let streak = 0;
+  const now = new Date();
+  for (let i = 0; i < 365; i++) {
+    const d = new Date(now);
+    d.setDate(d.getDate() - i);
+    const key =
+      d.getFullYear() +
+      "-" +
+      String(d.getMonth() + 1).padStart(2, "0") +
+      "-" +
+      String(d.getDate()).padStart(2, "0");
+    if (history[key] !== undefined) {
+      streak++;
+    } else {
+      break;
+    }
+  }
+  return streak;
+}
+
+// ─── Onboarding ──────────────────────────────────────────────────────────────
+
+function hasOnboarded(): boolean {
+  return localStorage.getItem(ONBOARDED_KEY) === "true";
+}
+
+function markOnboarded(): void {
+  try {
+    localStorage.setItem(ONBOARDED_KEY, "true");
+  } catch {}
+}
+
+// ─── Date util ───────────────────────────────────────────────────────────────
+
 function getTodayDateString(): string {
   const d = new Date();
   return (
@@ -40,6 +103,8 @@ function getTodayDateString(): string {
     String(d.getDate()).padStart(2, "0")
   );
 }
+
+// ─── Skeleton loading UI ──────────────────────────────────────────────────────
 
 function SkeletonHeader() {
   return (
@@ -107,6 +172,8 @@ function SkeletonMessages() {
   );
 }
 
+// ─── Main component ───────────────────────────────────────────────────────────
+
 export function DailyPuzzle() {
   const today = getTodayDateString();
 
@@ -116,6 +183,8 @@ export function DailyPuzzle() {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [result, setResult] = useState<PuzzleResult | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [streak, setStreak] = useState(0);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -123,6 +192,8 @@ export function DailyPuzzle() {
     setError(null);
 
     const stored = loadStoredResult(today);
+    const history = getHistory();
+    setStreak(computeStreak(history));
 
     getDailyPuzzle()
       .then((p) => {
@@ -131,6 +202,10 @@ export function DailyPuzzle() {
         if (stored) {
           setSelectedIndex(stored.selectedIndex);
           setResult(stored.result);
+          // Returning player — mark onboarded silently
+          markOnboarded();
+        } else if (!hasOnboarded()) {
+          setShowOnboarding(true);
         }
       })
       .catch((err) => {
@@ -141,8 +216,15 @@ export function DailyPuzzle() {
         if (!cancelled) setLoading(false);
       });
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [today]);
+
+  const handleDismissOnboarding = () => {
+    markOnboarded();
+    setShowOnboarding(false);
+  };
 
   const handleSelect = (index: number) => {
     if (submitting || selectedIndex !== null || !puzzle) return;
@@ -154,6 +236,8 @@ export function DailyPuzzle() {
         const res = await submitAnswer(puzzle.date, index);
         setResult(res);
         saveStoredResult({ date: today, selectedIndex: index, result: res });
+        saveToHistory(today, res.correct);
+        setStreak(computeStreak(getHistory()));
       } catch (err) {
         console.error("Failed to submit answer:", err);
       } finally {
@@ -183,6 +267,7 @@ export function DailyPuzzle() {
           background: "#fff",
           overflow: "hidden",
           fontFamily: FONT,
+          position: "relative",
         }}
       >
         {loading || !puzzle ? (
@@ -212,9 +297,11 @@ export function DailyPuzzle() {
                     textAlign: "center",
                   }}
                 >
-                  <p style={{ color: "#FF3B30", fontSize: 16 }}>{error}</p>
+                  <p style={{ color: "#FF3B30", fontSize: 16 }}>
+                    Unable to load today's puzzle.
+                  </p>
                   <p style={{ color: "#8e8e93", fontSize: 14 }}>
-                    Make sure the server is running (npm run dev:all)
+                    Check your connection and try again.
                   </p>
                   <button
                     onClick={() => window.location.reload()}
@@ -237,14 +324,19 @@ export function DailyPuzzle() {
             </div>
           </>
         ) : (
-          <DailyPuzzleView
-            puzzle={puzzle}
-            selectedIndex={selectedIndex}
-            onSelectOption={handleSelect}
-            submitting={submitting}
-            result={result}
-            subtitle={`Today's puzzle · ${(puzzle.premise.split(/\.\s+/).filter(Boolean).pop() ?? puzzle.premise).trim()}`}
-          />
+          <>
+            <DailyPuzzleView
+              puzzle={puzzle}
+              selectedIndex={selectedIndex}
+              onSelectOption={handleSelect}
+              submitting={submitting}
+              result={result}
+              streak={streak}
+            />
+            {showOnboarding && (
+              <OnboardingOverlay onDismiss={handleDismissOnboarding} />
+            )}
+          </>
         )}
       </div>
     </div>

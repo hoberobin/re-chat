@@ -29,6 +29,12 @@ export function getSenderColor(sender: string, orderedSenders?: string[]): strin
   return SENDER_COLORS[Math.abs(hash) % SENDER_COLORS.length];
 }
 
+/** Returns true only if `name` is one of the actual senders in the chat. */
+export function isKnownSender(name: string | null, orderedSenders?: string[]): boolean {
+  if (!name || !orderedSenders?.length) return false;
+  return orderedSenders.includes(name);
+}
+
 /** Extract the name from an option string like "Jordan — she organized..." or plain "Jordan". */
 export function getOptionSenderName(option: string): string | null {
   const match = option.match(/^([^—\-]+?)\s*[—\-]/);
