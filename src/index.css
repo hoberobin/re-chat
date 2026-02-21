@@ -1,25 +1,26 @@
-@import "tailwindcss";
-
-@layer base {
-  html {
-    height: 100%;
-    height: 100dvh;
-  }
-
-  body {
-    @apply bg-white text-gray-900 antialiased;
-    height: 100%;
-    height: 100dvh;
-    margin: 0;
-    overflow: hidden; /* DailyPuzzle controls its own scroll via position:fixed */
-  }
-
-  #root {
-    height: 100%;
-    height: 100dvh;
-  }
+/* Base layout - Mantine + custom; Tailwind removed */
+html {
+  height: 100%;
+  height: 100dvh;
 }
 
+body {
+  background-color: white;
+  color: #111827;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  height: 100%;
+  height: 100dvh;
+  margin: 0;
+  overflow: hidden; /* DailyPuzzle controls its own scroll via position:fixed */
+}
+
+#root {
+  height: 100%;
+  height: 100dvh;
+}
+
+/* Animations */
 @keyframes fadeIn {
   from {
     opacity: 0;

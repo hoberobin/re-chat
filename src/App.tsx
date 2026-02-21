@@ -5,14 +5,15 @@ import { PuzzleBySlug } from "./pages/PuzzleBySlug";
 import { Practice } from "./pages/Practice";
 import { DailyPuzzlesList } from "./pages/DailyPuzzlesList";
 import { DailyPuzzleForm } from "./pages/DailyPuzzleForm";
+import { Box, Button } from "@mantine/core";
 
 const isDevMode = import.meta.env.VITE_DEV_MODE === "true";
 
 function AppContent() {
   return (
-    <div className="relative min-h-screen">
+    <Box style={{ position: "relative", minHeight: "100vh" }}>
       {isDevMode && (
-        <div
+        <Box
           style={{
             background: "#f0f4ff",
             borderBottom: "1px solid #dde2f0",
@@ -20,12 +21,12 @@ function AppContent() {
             fontSize: 13,
           }}
         >
-          <Link to="/puzzle" style={{ color: "#2563EB", fontWeight: 500 }}>
+          <Button component={Link} to="/puzzle" variant="subtle" color="blue" size="compact-sm" fw={500}>
             Puzzle
-          </Link>
-        </div>
+          </Button>
+        </Box>
       )}
-      <main>
+      <Box component="main">
         <Routes>
           <Route path="/" element={<DailyPuzzle />} />
           <Route path="/classic" element={<Landing />} />
@@ -37,8 +38,8 @@ function AppContent() {
           <Route path="/p/:id" element={<PuzzleBySlug />} />
           <Route path="/embed/:id" element={<PuzzleBySlug embed />} />
         </Routes>
-      </main>
-    </div>
+      </Box>
+    </Box>
   );
 }
 

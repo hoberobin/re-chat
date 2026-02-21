@@ -3,19 +3,14 @@ import { AnswerOptions } from "./AnswerOptions";
 import { ResultReveal } from "./ResultReveal";
 import type { DailyPuzzle, PuzzleResult } from "../types/puzzle";
 import { getOptionSenderName, getOrderedSenders } from "../utils/chatColors";
-
-const FONT = '-apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif';
+import { Box, Stack, Text } from "@mantine/core";
 
 export interface DailyPuzzleViewProps {
   puzzle: DailyPuzzle;
-  /** When provided, show interactive options and call on select (play mode). */
   selectedIndex?: number | null;
   onSelectOption?: (index: number) => void;
-  /** When true, options are disabled (e.g. while submitting). */
   submitting?: boolean;
-  /** When provided, show result reveal instead of options (after submit). */
   result?: PuzzleResult | null;
-  /** Subtitle under the header (e.g. "Today's puzzle · Who spoiled it?") */
   subtitle?: string;
 }
 
@@ -33,7 +28,7 @@ export function DailyPuzzleView({
   const displaySubtitle = subtitle ?? `Today's puzzle · ${questionPrompt}`;
 
   return (
-    <div
+    <Box
       style={{
         width: "100%",
         maxWidth: 430,
@@ -42,7 +37,6 @@ export function DailyPuzzleView({
         flexDirection: "column",
         background: "#fff",
         overflow: "hidden",
-        fontFamily: FONT,
       }}
     >
       <ChatThreadHeader
@@ -54,10 +48,10 @@ export function DailyPuzzleView({
         subtitle={displaySubtitle}
       />
 
-      <div
+      <Box
         style={{
           flex: 1,
-          minHeight: "45vh",
+          minHeight: 0,
           overflowY: "auto",
           overflowX: "hidden",
           WebkitOverflowScrolling: "touch" as React.CSSProperties["WebkitOverflowScrolling"],
@@ -74,9 +68,9 @@ export function DailyPuzzleView({
           showPremiseInBody={false}
           orderedSenders={orderedSenders}
         />
-      </div>
+      </Box>
 
-      <div
+      <Box
         style={{
           flexShrink: 0,
           background: "#fff",
@@ -90,7 +84,7 @@ export function DailyPuzzleView({
             : {}),
         }}
       >
-        <div style={{ padding: "20px 16px 28px", paddingBottom: "max(28px, env(safe-area-inset-bottom))" }}>
+        <Box style={{ padding: "20px 16px 28px", paddingBottom: "max(28px, env(safe-area-inset-bottom))" }}>
           {result != null ? (
             <ResultReveal
               correct={result.correct}
@@ -102,28 +96,13 @@ export function DailyPuzzleView({
               stats={result.stats}
             />
           ) : (
-            <>
-              <p
-                style={{
-                  fontSize: 15,
-                  fontWeight: 600,
-                  color: "#1c1c1e",
-                  marginBottom: 4,
-                  textAlign: "center",
-                }}
-              >
+            <Stack gap={14}>
+              <Text size="md" fw={600} c="dark" ta="center" mb={4}>
                 {questionPrompt}
-              </p>
-              <p
-                style={{
-                  fontSize: 13,
-                  color: "#6b6b70",
-                  marginBottom: 14,
-                  textAlign: "center",
-                }}
-              >
+              </Text>
+              <Text size="sm" c="dimmed" ta="center" mb={14}>
                 Pick the answer that fits the clues in the chat.
-              </p>
+              </Text>
               <AnswerOptions
                 options={puzzle.options}
                 onSelect={onSelectOption ?? (() => {})}
@@ -132,10 +111,10 @@ export function DailyPuzzleView({
                 correctIndex={null}
                 orderedSenders={orderedSenders}
               />
-            </>
+            </Stack>
           )}
-        </div>
-      </div>
-    </div>
+        </Box>
+      </Box>
+    </Box>
   );
 }

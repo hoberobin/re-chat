@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Play, type DailyPersistedState } from "./Play";
 import { getDailyPuzzleLegacy } from "../api/puzzles";
 import type { Puzzle } from "../types/legacy";
+import { Box, Stack, Title, Text, Button, Center } from "@mantine/core";
 
 const STORAGE_KEY = "rechat-daily";
 
@@ -67,35 +68,35 @@ export function Landing() {
 
   if (loading) {
     return (
-      <div className="w-full min-h-screen flex flex-col items-center justify-center px-4 py-6 sm:py-8">
-        <p className="text-gray-500">Loading today's puzzle…</p>
-      </div>
+      <Center component="div" mih="100vh" p="md" style={{ flexDirection: "column" }}>
+        <Text size="sm" c="dimmed">Loading today&apos;s puzzle…</Text>
+      </Center>
     );
   }
 
   if (error || !daily) {
     return (
-      <div className="w-full min-h-screen flex flex-col items-center justify-center px-4 py-6 sm:py-8">
-        <p className="text-red-600 mb-2">{error ?? "Could not load puzzle."}</p>
-        <p className="text-sm text-gray-600">Make sure the server is running (npm run dev:all).</p>
-      </div>
+      <Center component="div" mih="100vh" p="md" style={{ flexDirection: "column" }}>
+        <Text size="sm" c="red" mb="xs">{error ?? "Could not load puzzle."}</Text>
+        <Text size="xs" c="dimmed">Make sure the server is running (npm run dev:all).</Text>
+      </Center>
     );
   }
 
   return (
-    <div className="w-full min-h-screen flex flex-col items-center px-4 py-6 sm:py-8">
-      <div className="w-full max-w-[600px] mx-auto">
-        <div className="text-center mb-4">
-          <h1 className="text-2xl sm:text-3xl font-semibold text-gray-900 mb-1">re:chat</h1>
-          <p className="text-sm text-gray-600">
+    <Box w="100%" mih="100vh" py="md" px="md" style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+      <Box w="100%" maw={600} mx="auto">
+        <Stack align="center" gap={4} mb="md">
+          <Title order={1} size="h2" fw={600} ta="center">
+            re:chat
+          </Title>
+          <Text size="sm" c="dimmed" ta="center">
             Put the messages in order. One puzzle per day. One try.
-          </p>
-          <p className="mt-2">
-            <Link to="/practice" className="text-xs text-[#007AFF] hover:underline">
-              Play yesterday's puzzle (practice)
-            </Link>
-          </p>
-        </div>
+          </Text>
+          <Button component={Link} to="/practice" variant="subtle" size="xs" color="primary">
+            Play yesterday&apos;s puzzle (practice)
+          </Button>
+        </Stack>
 
         <Play
           previewPuzzle={daily.puzzle}
@@ -104,7 +105,7 @@ export function Landing() {
           persistedState={persistedState}
           onPersist={handlePersist}
         />
-      </div>
-    </div>
+      </Box>
+    </Box>
   );
 }

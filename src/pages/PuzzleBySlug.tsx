@@ -3,6 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { getPuzzle } from "../api/puzzles";
 import type { Puzzle } from "../types/puzzle";
 import { Play } from "./Play";
+import { Box, Center, Text, Button, Stack } from "@mantine/core";
 
 interface PuzzleBySlugProps {
   embed?: boolean;
@@ -29,41 +30,49 @@ export function PuzzleBySlug({ embed = false }: PuzzleBySlugProps) {
 
   if (loading) {
     return (
-      <div className={`w-full flex items-center justify-center ${embed ? "min-h-[400px]" : "min-h-screen"}`}>
-        <p className={`text-gray-500 ${embed ? "text-sm" : ""}`}>Loading puzzle…</p>
-      </div>
+      <Center
+        component="div"
+        w="100%"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          minHeight: embed ? 400 : "100vh",
+        }}
+      >
+        <Text size={embed ? "sm" : "md"} c="dimmed">Loading puzzle…</Text>
+      </Center>
     );
   }
 
   if (error || !puzzle) {
     if (embed) {
       return (
-        <div className="w-full min-h-[400px] flex items-center justify-center">
-          <p className="text-gray-500 text-sm">Puzzle not found.</p>
-        </div>
+        <Center component="div" w="100%" mih={400} style={{ flexDirection: "column" }}>
+          <Text size="sm" c="dimmed">Puzzle not found.</Text>
+        </Center>
       );
     }
     return (
-      <div className="w-full min-h-screen flex flex-col items-center justify-center gap-4 px-4">
-        <p className="text-gray-600">Puzzle not found.</p>
-        <Link to="/" className="text-gray-600 hover:text-gray-900 underline">
-          Go home
-        </Link>
-        <Link
-          to="/create"
-          className="min-h-[44px] px-6 py-3 bg-gray-900 text-white text-sm font-medium rounded-xl hover:bg-gray-800"
-        >
-          Create your own
-        </Link>
-      </div>
+      <Center component="div" w="100%" mih="100vh" px="md" style={{ flexDirection: "column", gap: 16 }}>
+        <Text size="sm" c="dimmed">Puzzle not found.</Text>
+        <Stack gap="sm" align="center">
+          <Button component={Link} to="/" variant="subtle" color="gray">
+            Go home
+          </Button>
+          <Button component={Link} to="/create" variant="filled" color="dark" size="md" fw={500} radius="lg">
+            Create your own
+          </Button>
+        </Stack>
+      </Center>
     );
   }
 
   if (embed) {
     return (
-      <div className="min-h-[500px]">
+      <Box style={{ minHeight: 500 }}>
         <Play previewPuzzle={puzzle} />
-      </div>
+      </Box>
     );
   }
 

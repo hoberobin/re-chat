@@ -4,6 +4,7 @@ import { shuffle } from "../data/puzzles";
 import { ArrowUpIcon, ArrowDownIcon } from "../components/Icons";
 import { StrikeIndicator } from "../components/StrikeIndicator";
 import { HintIcon } from "../components/HintIcon";
+import { Box, Stack, Group, Text, Title, Button, Paper } from "@mantine/core";
 
 function ShareResultButton({ timeSeconds }: { timeSeconds: number }) {
   const [copied, setCopied] = useState(false);
@@ -18,13 +19,17 @@ function ShareResultButton({ timeSeconds }: { timeSeconds: number }) {
     }
   };
   return (
-    <button
+    <Button
       type="button"
+      variant="subtle"
+      size="sm"
+      color="primary"
       onClick={handleClick}
-      className="mt-3 text-sm text-[#007AFF] hover:underline"
+      mt="xs"
+      style={{ textDecoration: copied ? "none" : "underline" }}
     >
       {copied ? "Copied!" : "Share your result"}
-    </button>
+    </Button>
   );
 }
 
@@ -294,26 +299,41 @@ export function Play({
   if (!currentPuzzle) return null;
 
   return (
-    <div className={`w-full flex flex-col items-center animate-fade-in ${hideHeader ? "px-0 py-0" : "px-4 py-6 sm:py-8 min-h-screen justify-center"}`}>
-      <div className="w-full max-w-[600px] mx-auto">
-        <div className={`flex flex-wrap justify-between items-start gap-4 mb-4 ${hideHeader ? "justify-end" : ""}`}>
+    <Box
+      className="animate-fade-in"
+      w="100%"
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        padding: hideHeader ? 0 : "24px 16px",
+        minHeight: hideHeader ? "auto" : "100vh",
+        justifyContent: hideHeader ? "flex-start" : "center",
+      }}
+    >
+      <Box w="100%" maw={600} mx="auto">
+        <Group
+          justify={hideHeader ? "flex-end" : "space-between"}
+          align="flex-start"
+          gap="md"
+          mb="md"
+          wrap="wrap"
+        >
           {!hideHeader && (
-            <div>
-              <h1 className="text-3xl font-medium text-gray-900 mb-1">re:chat</h1>
-              <p className="text-sm sm:text-base text-gray-500">
-                Put the messages in order.
-              </p>
-            </div>
+            <Box>
+              <Title order={1} size="h2" fw={500} mb={4}>re:chat</Title>
+              <Text size="sm" c="dimmed">Put the messages in order.</Text>
+            </Box>
           )}
-          <div className={`flex flex-row justify-between items-center ${hideHeader ? "w-full" : "flex-1 min-w-0"}`}>
-            <div className="flex items-center gap-3">
+          <Group justify="space-between" align="center" style={hideHeader ? { width: "100%" } : { flex: 1, minWidth: 0 }}>
+            <Group gap="sm">
               <StrikeIndicator strikes={strikes} />
               {dailyMode && !isSolved && !gameOver && (
-                <span className="text-sm text-gray-500 tabular-nums" aria-label={`Time: ${formatTime(timeElapsed)}`}>
+                <Text size="sm" c="dimmed" style={{ fontVariantNumeric: "tabular-nums" }} aria-label={`Time: ${formatTime(timeElapsed)}`}>
                   {formatTime(timeElapsed)}
-                </span>
+                </Text>
               )}
-            </div>
+            </Group>
             {showHintButton ? (
               <HintIcon
                 hints={visibleConstraints}
@@ -322,173 +342,223 @@ export function Play({
                 onOpen={() => setUserHasOpenedHint(true)}
               />
             ) : (
-              <div className="w-11 h-11 shrink-0" aria-hidden />
+              <Box w={44} h={44} style={{ flexShrink: 0 }} aria-hidden />
             )}
-          </div>
-        </div>
+          </Group>
+        </Group>
 
-        <p className={`text-sm text-gray-500 mb-3 ${hideHeader ? "hidden" : ""}`}>
-          Drag or use arrows to reorder. Put the conversation in chronological
-          order.
-        </p>
+        {!hideHeader && (
+          <Text size="sm" c="dimmed" mb="sm">
+            Drag or use arrows to reorder. Put the conversation in chronological order.
+          </Text>
+        )}
 
-        <ul
-          className={`flex flex-col transition-all rounded-xl p-2 -m-2 ${
-            hideHeader ? "gap-2 mb-4 min-h-[140px]" : "gap-3 mb-6 min-h-[200px]"
-          } ${
-            isSolved ? "ring-2 ring-green-400 ring-offset-2 bg-green-50/50 rounded-xl" : ""
-          } ${gameOver ? "ring-2 ring-red-400 ring-offset-2 bg-red-50/30" : ""}`}
+        <Box
+          component="ul"
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: hideHeader ? 8 : 12,
+            marginBottom: hideHeader ? 16 : 24,
+            minHeight: hideHeader ? 140 : 200,
+            padding: 8,
+            margin: -8,
+            borderRadius: 12,
+            transition: "all 0.2s",
+            ...(isSolved ? { outline: "2px solid var(--mantine-color-green-4)", outlineOffset: 2, backgroundColor: "rgba(134, 239, 172, 0.3)" } : {}),
+            ...(gameOver ? { outline: "2px solid var(--mantine-color-red-4)", outlineOffset: 2, backgroundColor: "rgba(254, 202, 202, 0.3)" } : {}),
+          }}
         >
           {displayOrder.map((id, index) => {
             const msg = currentPuzzle.messages.find((m) => m.id === id);
             if (!msg) return null;
             const isSent = msg.speaker === "A";
             return (
-              <li
+              <Box
+                component="li"
                 key={id}
                 draggable={canReorder}
                 onDragStart={(e) => handleDragStart(e, index)}
                 onDragEnd={handleDragEnd}
                 onDragOver={handleDragOver}
                 onDrop={(e) => handleDrop(e, index)}
-                className={`flex items-center gap-2 w-full group ${
-                  canReorder ? "cursor-grab active:cursor-grabbing" : ""
-                } ${isSent ? "justify-end" : ""}`}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  width: "100%",
+                  cursor: canReorder ? "grab" : "default",
+                  justifyContent: isSent ? "flex-end" : "flex-start",
+                }}
               >
                 {canReorder && (
-                  <div className="flex flex-col shrink-0 gap-0.5 opacity-60 group-hover:opacity-100 transition-opacity">
-                    <button
+                  <Group gap={2} style={{ flexShrink: 0, opacity: 0.6 }}>
+                    <Button
+                      variant="subtle"
                       type="button"
                       onClick={() => moveMessage(index, "up")}
                       disabled={index === 0}
                       aria-label="Move up"
-                      className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed touch-manipulation"
+                      p="xs"
+                      style={{ minHeight: 44, minWidth: 44, touchAction: "manipulation" }}
+                      styles={{ inner: { justifyContent: "center", alignItems: "center" } }}
                     >
-                      <ArrowUpIcon className="w-5 h-5 text-gray-600" />
-                    </button>
-                    <button
+                      <ArrowUpIcon />
+                    </Button>
+                    <Button
+                      variant="subtle"
                       type="button"
                       onClick={() => moveMessage(index, "down")}
                       disabled={index === messageOrder.length - 1}
                       aria-label="Move down"
-                      className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed touch-manipulation"
+                      p="xs"
+                      style={{ minHeight: 44, minWidth: 44, touchAction: "manipulation" }}
+                      styles={{ inner: { justifyContent: "center", alignItems: "center" } }}
                     >
-                      <ArrowDownIcon className="w-5 h-5 text-gray-600" />
-                    </button>
-                  </div>
+                      <ArrowDownIcon />
+                    </Button>
+                  </Group>
                 )}
-                <div
+                <Box
                   data-bubble
-                  className={`flex-shrink-0 max-w-[85%] sm:max-w-[280px] px-4 py-3 rounded-2xl text-[15px] leading-relaxed transition-all ${
-                    canReorder ? "hover:shadow-md" : ""
-                  } ${
-                    isSent
-                      ? "rounded-br-md bg-[#007AFF] text-white"
-                      : "rounded-bl-md bg-[#E5E5EA] text-gray-900"
-                  }`}
+                  style={{
+                    flexShrink: 0,
+                    maxWidth: "85%",
+                    padding: "12px 16px",
+                    borderRadius: 16,
+                    fontSize: 15,
+                    lineHeight: 1.5,
+                    transition: "all 0.2s",
+                    ...(isSent
+                      ? { borderBottomRightRadius: 4, background: "#007AFF", color: "white" }
+                      : { borderBottomLeftRadius: 4, background: "#E5E5EA", color: "#111" }),
+                  }}
                 >
                   {msg.text}
-                </div>
-              </li>
+                </Box>
+              </Box>
             );
           })}
-        </ul>
+        </Box>
 
         {isSolved && !hideSuccessMessage && (
-          <div className="text-center mb-4">
-            <p className="text-green-600 font-medium">
+          <Stack align="center" gap={4} mb="md">
+            <Text size="sm" fw={600} c="green">
               You got it{timeElapsed > 0 ? ` in ${formatTime(timeElapsed)}` : ""}.
-            </p>
+            </Text>
             {dailyMode && (
               <>
-                <p className="text-sm text-gray-600 mt-1">See you tomorrow.</p>
+                <Text size="sm" c="dimmed">See you tomorrow.</Text>
                 <ShareResultButton timeSeconds={timeElapsed} />
               </>
             )}
-          </div>
+          </Stack>
         )}
 
         {gameOver && (
-          <div className="text-center mb-4">
-            <p className="text-red-600 font-medium mb-3">
+          <Stack align="center" gap="sm" mb="md">
+            <Text size="sm" fw={600} c="red">
               {dailyMode ? "You're out for today." : "Out! 3 strikes."}
-            </p>
+            </Text>
             {dailyMode && (
-              <p className="text-sm text-gray-600 mb-3">See you tomorrow for a new puzzle.</p>
+              <Text size="sm" c="dimmed">See you tomorrow for a new puzzle.</Text>
             )}
             {dailyMode && currentPuzzle && (
-              <div className="mb-4 text-left rounded-xl bg-gray-50 border border-gray-200 p-4">
-                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">
+              <Paper radius="lg" p="md" withBorder style={{ width: "100%", textAlign: "left", backgroundColor: "#f9fafb" }} mb="md">
+                <Text size="xs" fw={600} c="dimmed" tt="uppercase" mb="xs">
                   Correct order
-                </p>
-                <ul className="flex flex-col gap-2">
+                </Text>
+                <Stack gap="xs">
                   {currentPuzzle.correctOrder.map((id) => {
                     const msg = currentPuzzle.messages.find((m) => m.id === id);
                     if (!msg) return null;
                     const isSent = msg.speaker === "A";
                     return (
-                      <li
+                      <Box
                         key={id}
-                        className={`flex ${isSent ? "justify-end" : ""}`}
+                        component="div"
+                        style={{
+                          display: "flex",
+                          justifyContent: isSent ? "flex-end" : "flex-start",
+                        }}
                       >
-                        <span
-                          className={`inline-block max-w-[85%] px-4 py-2 rounded-2xl text-sm ${
-                            isSent
-                              ? "rounded-br-md bg-[#007AFF] text-white"
-                              : "rounded-bl-md bg-[#E5E5EA] text-gray-900"
-                          }`}
+                        <Box
+                          component="span"
+                          style={{
+                            display: "inline-block",
+                            maxWidth: "85%",
+                            padding: "8px 16px",
+                            borderRadius: 16,
+                            fontSize: 14,
+                            ...(isSent
+                              ? { borderBottomRightRadius: 4, background: "#007AFF", color: "white" }
+                              : { borderBottomLeftRadius: 4, background: "#E5E5EA", color: "#111" }),
+                          }}
                         >
                           {msg.text}
-                        </span>
-                      </li>
+                        </Box>
+                      </Box>
                     );
                   })}
-                </ul>
-              </div>
+                </Stack>
+              </Paper>
             )}
             {!dailyMode && (
-              <button
+              <Button
+                variant="filled"
+                color="dark"
+                size="md"
+                fw={500}
                 onClick={handleTryAgain}
-                className="min-h-[44px] px-6 py-3 bg-gray-900 text-white text-sm font-medium rounded-xl hover:bg-gray-800 transition-colors touch-manipulation"
+                style={{ minHeight: 44, touchAction: "manipulation" }}
               >
                 Try again
-              </button>
+              </Button>
             )}
-          </div>
+          </Stack>
         )}
 
         {!gameOver && (
-          <div
-            className={`flex flex-col gap-3 ${showShake ? "animate-shake" : ""}`}
+          <Stack
+            gap="md"
+            className={showShake ? "animate-shake" : ""}
           >
             {showShake && (
-              <p className="text-sm text-red-600 font-medium text-center">
+              <Text size="sm" fw={600} c="red" ta="center">
                 {dailyMode && lastCorrectCount !== null
                   ? `Not quite — ${lastCorrectCount} of ${currentPuzzle!.correctOrder.length} in correct position. Use that to narrow it down.`
                   : "Wrong order. Try again."}
-              </p>
+              </Text>
             )}
-            <div className="flex flex-col sm:flex-row gap-3">
-              <button
+            <Group gap="md" wrap="wrap">
+              <Button
+                variant="filled"
+                color="dark"
+                size="md"
+                fw={500}
                 onClick={handleCheck}
                 disabled={isSolved}
-                className="min-h-[44px] px-6 py-3 bg-gray-900 text-white text-sm font-medium rounded-xl hover:bg-gray-800 disabled:opacity-60 disabled:cursor-not-allowed transition-colors touch-manipulation"
+                style={{ minHeight: 44, touchAction: "manipulation" }}
               >
                 Check Answer
-              </button>
+              </Button>
               {!dailyMode && (
-                <button
+                <Button
+                  variant="outline"
+                  color="gray"
+                  size="md"
+                  fw={500}
                   onClick={handleReset}
                   disabled={isSolved}
-                  className="min-h-[44px] px-6 py-3 border border-gray-300 text-gray-700 text-sm font-medium rounded-xl hover:bg-gray-50 disabled:opacity-60 disabled:cursor-not-allowed transition-colors touch-manipulation"
+                  style={{ minHeight: 44, touchAction: "manipulation" }}
                 >
                   Reset
-                </button>
+                </Button>
               )}
-            </div>
-          </div>
+            </Group>
+          </Stack>
         )}
-      </div>
-    </div>
+      </Box>
+    </Box>
   );
 }

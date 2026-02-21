@@ -4,8 +4,20 @@ import { DailyPuzzleView } from "../components/DailyPuzzleView";
 import { createDailyPuzzle } from "../api/puzzles";
 import type { DailyPuzzleCreatePayload } from "../types/puzzle";
 import type { ChatMessage } from "../types/puzzle";
-
-const FONT = '-apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif';
+import {
+  Box,
+  Stack,
+  Group,
+  Title,
+  Text,
+  TextInput,
+  Textarea,
+  Button,
+  Checkbox,
+  Radio,
+  Paper,
+  Alert,
+} from "@mantine/core";
 
 function getTodayDateString(): string {
   const d = new Date();
@@ -174,293 +186,238 @@ export function CreateDaily() {
   const previewPuzzle = draftToPuzzle(draft);
 
   return (
-    <div
+    <Box
       style={{
         minHeight: "100vh",
         background: "#e5e5ea",
-        fontFamily: FONT,
         padding: "16px 0",
       }}
     >
-      <div
-        style={{
-          maxWidth: 1200,
-          margin: "0 auto",
-          display: "flex",
-          flexDirection: "row",
-          gap: 24,
-          alignItems: "flex-start",
-          flexWrap: "wrap",
-        }}
-      >
-        {/* Editor panel */}
-        <div
+      <Group align="flex-start" gap={24} wrap="wrap" maw={1200} mx="auto" style={{ alignItems: "flex-start" }}>
+        <Paper
+          p={20}
+          radius="lg"
+          shadow="sm"
+          bg="white"
           style={{
             flex: "1 1 400px",
             minWidth: 0,
             maxHeight: "calc(100vh - 48px)",
             overflowY: "auto",
-            background: "#fff",
-            borderRadius: 12,
-            padding: 20,
-            boxShadow: "0 2px 12px rgba(0,0,0,0.08)",
           }}
         >
-          <h1 style={{ fontSize: 20, fontWeight: 700, marginBottom: 16 }}>Create daily puzzle</h1>
-          <p style={{ fontSize: 13, color: "#6b6b70", marginBottom: 20 }}>
+          <Title order={1} size="h4" fw={700} mb={16}>
+            Create daily puzzle
+          </Title>
+          <Text size="sm" c="dimmed" mb={20}>
             Edit below; preview updates live. When ready, set the release date and publish.
-          </p>
+          </Text>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-              <span style={{ fontSize: 13, fontWeight: 600 }}>Title</span>
-              <input
-                type="text"
-                value={draft.title}
-                onChange={(e) => update("title", e.target.value)}
-                placeholder="e.g. The Surprise"
-                style={{ padding: "8px 12px", fontSize: 15, borderRadius: 8, border: "1px solid #d1d1d6" }}
-              />
-            </label>
-            <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-              <span style={{ fontSize: 13, fontWeight: 600 }}>Chat name</span>
-              <input
-                type="text"
-                value={draft.chat_name}
-                onChange={(e) => update("chat_name", e.target.value)}
-                placeholder="e.g. Maya's Bday"
-                style={{ padding: "8px 12px", fontSize: 15, borderRadius: 8, border: "1px solid #d1d1d6" }}
-              />
-            </label>
-            <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-              <span style={{ fontSize: 13, fontWeight: 600 }}>Premise</span>
-              <textarea
-                value={draft.premise}
-                onChange={(e) => update("premise", e.target.value)}
-                placeholder="e.g. You're reading a group chat..."
-                rows={3}
-                style={{ padding: "8px 12px", fontSize: 15, borderRadius: 8, border: "1px solid #d1d1d6", resize: "vertical" }}
-              />
-            </label>
-            <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <input
-                type="checkbox"
-                checked={draft.is_group}
-                onChange={(e) => update("is_group", e.target.checked)}
-              />
-              <span style={{ fontSize: 13 }}>Group chat</span>
-            </label>
-            <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-              <span style={{ fontSize: 13, fontWeight: 600 }}>Release date</span>
-              <input
-                type="date"
-                value={draft.date}
-                onChange={(e) => update("date", e.target.value)}
-                style={{ padding: "8px 12px", fontSize: 15, borderRadius: 8, border: "1px solid #d1d1d6" }}
-              />
-            </label>
-          </div>
+          <Stack gap={16}>
+            <TextInput
+              label="Title"
+              placeholder="e.g. The Surprise"
+              value={draft.title}
+              onChange={(e) => update("title", e.target.value)}
+              radius="sm"
+              styles={{ label: { fontSize: 13, fontWeight: 600 } }}
+            />
+            <TextInput
+              label="Chat name"
+              placeholder="e.g. Maya's Bday"
+              value={draft.chat_name}
+              onChange={(e) => update("chat_name", e.target.value)}
+              radius="sm"
+              styles={{ label: { fontSize: 13, fontWeight: 600 } }}
+            />
+            <Textarea
+              label="Premise"
+              placeholder="e.g. You're reading a group chat..."
+              value={draft.premise}
+              onChange={(e) => update("premise", e.target.value)}
+              rows={3}
+              radius="sm"
+              styles={{ label: { fontSize: 13, fontWeight: 600 } }}
+            />
+            <Checkbox
+              label="Group chat"
+              checked={draft.is_group}
+              onChange={(e) => update("is_group", e.target.checked)}
+              size="sm"
+            />
+            <TextInput
+              label="Release date"
+              type="date"
+              value={draft.date}
+              onChange={(e) => update("date", e.target.value)}
+              radius="sm"
+              styles={{ label: { fontSize: 13, fontWeight: 600 } }}
+            />
+          </Stack>
 
-          <h2 style={{ fontSize: 16, fontWeight: 600, marginTop: 24, marginBottom: 8 }}>Messages</h2>
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <Title order={2} size="h5" fw={600} mt={24} mb={8}>
+            Messages
+          </Title>
+          <Stack gap={10}>
             {draft.messages.map((msg, i) => (
-              <div
-                key={msg.id}
-                style={{
-                  padding: 12,
-                  border: "1px solid #e5e5ea",
-                  borderRadius: 8,
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 6,
-                }}
-              >
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span style={{ fontSize: 12, color: "#6b6b70" }}>Message {i + 1}</span>
-                  <div style={{ display: "flex", gap: 4 }}>
-                    <button
-                      type="button"
-                      onClick={() => moveMessage(i, "up")}
-                      disabled={i === 0}
-                      style={{ padding: "4px 8px", fontSize: 12, cursor: i === 0 ? "default" : "pointer", opacity: i === 0 ? 0.5 : 1 }}
-                    >
-                      Up
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => moveMessage(i, "down")}
-                      disabled={i === draft.messages.length - 1}
-                      style={{ padding: "4px 8px", fontSize: 12, cursor: i === draft.messages.length - 1 ? "default" : "pointer", opacity: i === draft.messages.length - 1 ? 0.5 : 1 }}
-                    >
-                      Down
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => removeMessage(i)}
-                      disabled={draft.messages.length <= MIN_MESSAGES}
-                      style={{ padding: "4px 8px", fontSize: 12, cursor: draft.messages.length <= MIN_MESSAGES ? "default" : "pointer", color: "#FF3B30", opacity: draft.messages.length <= MIN_MESSAGES ? 0.5 : 1 }}
-                    >
-                      Remove
-                    </button>
-                  </div>
-                </div>
-                <input
-                  type="text"
-                  value={msg.sender}
-                  onChange={(e) => updateMessage(i, "sender", e.target.value)}
-                  placeholder="Sender name"
-                  style={{ padding: "6px 10px", fontSize: 14, borderRadius: 6, border: "1px solid #d1d1d6" }}
-                />
-                <textarea
-                  value={msg.text}
-                  onChange={(e) => updateMessage(i, "text", e.target.value)}
-                  placeholder="Message text"
-                  rows={2}
-                  style={{ padding: "6px 10px", fontSize: 14, borderRadius: 6, border: "1px solid #d1d1d6", resize: "vertical" }}
-                />
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <input
-                    type="text"
-                    value={msg.timestamp}
-                    onChange={(e) => updateMessage(i, "timestamp", e.target.value)}
-                    placeholder="12:00 PM"
-                    style={{ width: 80, padding: "4px 8px", fontSize: 13, borderRadius: 6, border: "1px solid #d1d1d6" }}
+              <Paper key={msg.id} p={12} radius="sm" withBorder style={{ borderColor: "#e5e5ea" }}>
+                <Stack gap={6}>
+                  <Group justify="space-between" align="center">
+                    <Text size="xs" c="dimmed">Message {i + 1}</Text>
+                    <Group gap={4}>
+                      <Button
+                        variant="subtle"
+                        size="compact-xs"
+                        onClick={() => moveMessage(i, "up")}
+                        disabled={i === 0}
+                      >
+                        Up
+                      </Button>
+                      <Button
+                        variant="subtle"
+                        size="compact-xs"
+                        onClick={() => moveMessage(i, "down")}
+                        disabled={i === draft.messages.length - 1}
+                      >
+                        Down
+                      </Button>
+                      <Button
+                        variant="subtle"
+                        size="compact-xs"
+                        color="red"
+                        onClick={() => removeMessage(i)}
+                        disabled={draft.messages.length <= MIN_MESSAGES}
+                      >
+                        Remove
+                      </Button>
+                    </Group>
+                  </Group>
+                  <TextInput
+                    placeholder="Sender name"
+                    value={msg.sender}
+                    onChange={(e) => updateMessage(i, "sender", e.target.value)}
+                    size="sm"
+                    radius="xs"
                   />
-                  <label style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12 }}>
-                    <input
-                      type="checkbox"
+                  <Textarea
+                    placeholder="Message text"
+                    value={msg.text}
+                    onChange={(e) => updateMessage(i, "text", e.target.value)}
+                    rows={2}
+                    size="sm"
+                    radius="xs"
+                    styles={{ input: { resize: "vertical" } }}
+                  />
+                  <Group align="center" gap={8}>
+                    <TextInput
+                      placeholder="12:00 PM"
+                      value={msg.timestamp}
+                      onChange={(e) => updateMessage(i, "timestamp", e.target.value)}
+                      size="xs"
+                      w={80}
+                      radius="xs"
+                    />
+                    <Checkbox
+                      label="Show timestamp"
+                      size="xs"
                       checked={msg.show_timestamp}
                       onChange={(e) => updateMessage(i, "show_timestamp", e.target.checked)}
                     />
-                    Show timestamp
-                  </label>
-                </div>
-              </div>
+                  </Group>
+                </Stack>
+              </Paper>
             ))}
-            <button
-              type="button"
+            <Button
+              variant="default"
               onClick={addMessage}
               disabled={draft.messages.length >= MAX_MESSAGES}
-              style={{
-                padding: "8px 12px",
-                fontSize: 13,
-                border: "1px dashed #d1d1d6",
-                borderRadius: 8,
-                background: "#f9f9f9",
-                cursor: draft.messages.length >= MAX_MESSAGES ? "default" : "pointer",
-              }}
+              radius="sm"
+              style={{ borderStyle: "dashed", borderColor: "#d1d1d6", background: "#f9f9f9" }}
             >
               + Add message
-            </button>
-          </div>
+            </Button>
+          </Stack>
 
-          <h2 style={{ fontSize: 16, fontWeight: 600, marginTop: 24, marginBottom: 8 }}>Answer options</h2>
-          <p style={{ fontSize: 12, color: "#6b6b70", marginBottom: 8 }}>
+          <Title order={2} size="h5" fw={600} mt={24} mb={8}>
+            Answer options
+          </Title>
+          <Text size="xs" c="dimmed" mb={8}>
             The three names players choose from. One must be correct.
-          </p>
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {draft.options.map((opt, i) => (
-              <label key={i} style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ width: 24, fontWeight: 600 }}>{["A", "B", "C"][i]}</span>
-                <input
-                  type="text"
-                  value={opt}
-                  onChange={(e) => {
-                    const next = [...draft.options];
-                    next[i] = e.target.value;
-                    update("options", next);
-                  }}
-                  placeholder={`Option ${i + 1}`}
-                  style={{ flex: 1, padding: "8px 12px", fontSize: 15, borderRadius: 8, border: "1px solid #d1d1d6" }}
-                />
-                <label style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12 }}>
-                  <input
-                    type="radio"
-                    name="correct"
-                    checked={draft.correct_option_index === i}
-                    onChange={() => update("correct_option_index", i)}
+          </Text>
+          <Radio.Group
+            value={String(draft.correct_option_index)}
+            onChange={(v) => update("correct_option_index", parseInt(v, 10))}
+          >
+            <Stack gap={8}>
+              {draft.options.map((opt, i) => (
+                <Group key={i} align="center" gap={8}>
+                  <Text size="sm" fw={600} w={24}>{["A", "B", "C"][i]}</Text>
+                  <TextInput
+                    placeholder={`Option ${i + 1}`}
+                    value={opt}
+                    onChange={(e) => {
+                      const next = [...draft.options];
+                      next[i] = e.target.value;
+                      update("options", next);
+                    }}
+                    radius="sm"
+                    style={{ flex: 1 }}
                   />
-                  Correct
-                </label>
-              </label>
-            ))}
-          </div>
+                  <Radio value={String(i)} label="Correct" size="xs" />
+                </Group>
+              ))}
+            </Stack>
+          </Radio.Group>
 
-          <label style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: 20 }}>
-            <span style={{ fontSize: 13, fontWeight: 600 }}>Explanation (shown after submit)</span>
-            <textarea
-              value={draft.explanation}
-              onChange={(e) => update("explanation", e.target.value)}
-              placeholder="Why this answer is correct..."
-              rows={4}
-              style={{ padding: "8px 12px", fontSize: 15, borderRadius: 8, border: "1px solid #d1d1d6", resize: "vertical" }}
-            />
-          </label>
+          <Textarea
+            label="Explanation (shown after submit)"
+            placeholder="Why this answer is correct..."
+            value={draft.explanation}
+            onChange={(e) => update("explanation", e.target.value)}
+            rows={4}
+            radius="sm"
+            mt={20}
+            styles={{ label: { fontSize: 13, fontWeight: 600 }, input: { resize: "vertical" } }}
+          />
 
           {publishError && (
-            <p style={{ color: "#FF3B30", fontSize: 13, marginTop: 16 }}>{publishError}</p>
+            <Alert color="red" variant="light" mt={16} radius="sm">
+              {publishError}
+            </Alert>
           )}
           {publishSuccess && (
-            <div style={{ marginTop: 16, padding: 12, background: "#f0fdf4", borderRadius: 8, border: "1px solid #86efac" }}>
-              <p style={{ color: "#15803d", fontSize: 13, fontWeight: 600 }}>Puzzle saved</p>
-              <p style={{ color: "#166534", fontSize: 12, marginTop: 4 }}>
+            <Alert color="green" variant="light" mt={16} radius="sm">
+              <Text fw={600} size="sm">Puzzle saved</Text>
+              <Text size="xs" mt={4}>
                 Release date: {publishSuccess.date}. Id: {publishSuccess.id}. It will appear on the home page when that date is today.
-              </p>
-            </div>
+              </Text>
+            </Alert>
           )}
-          <div style={{ display: "flex", gap: 12, marginTop: 24, flexWrap: "wrap" }}>
-            <button
-              type="button"
-              onClick={handlePublish}
-              disabled={publishing}
-              style={{
-                padding: "10px 20px",
-                fontSize: 15,
-                fontWeight: 600,
-                background: "#007AFF",
-                color: "#fff",
-                border: "none",
-                borderRadius: 10,
-                cursor: publishing ? "wait" : "pointer",
-              }}
-            >
+          <Group gap={12} mt={24} wrap="wrap">
+            <Button variant="filled" radius="md" size="md" fw={600} loading={publishing} onClick={handlePublish}>
               {publishing ? "Saving…" : "Publish to database"}
-            </button>
-            <Link
-              to="/"
-              style={{
-                padding: "10px 20px",
-                fontSize: 15,
-                color: "#007AFF",
-                textDecoration: "none",
-                display: "inline-flex",
-                alignItems: "center",
-              }}
-            >
+            </Button>
+            <Button component={Link} to="/" variant="subtle" size="md" c="primary">
               Back to today&apos;s puzzle
-            </Link>
-          </div>
-        </div>
+            </Button>
+          </Group>
+        </Paper>
 
-        {/* Preview — same phone column as player */}
-        <div
+        <Paper
+          radius="lg"
+          shadow="md"
+          bg="white"
           style={{
             flex: "0 0 auto",
             width: "100%",
             maxWidth: 430,
-            height: 700,
-            borderRadius: 12,
-            overflow: "hidden",
-            boxShadow: "0 4px 20px rgba(0,0,0,0.12)",
-            background: "#fff",
+            height: "min(700px, calc(100vh - 48px))",
+            overflow: "auto",
           }}
         >
-          <DailyPuzzleView
-            puzzle={previewPuzzle}
-            subtitle="Preview"
-          />
-        </div>
-      </div>
-    </div>
+          <DailyPuzzleView puzzle={previewPuzzle} subtitle="Preview" />
+        </Paper>
+      </Group>
+    </Box>
   );
 }

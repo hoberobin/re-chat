@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { Play } from "./Play";
 import { getDailyPuzzleLegacy, type LegacyDailyResponse } from "../api/puzzles";
+import { Box, Stack, Center, Text, Button } from "@mantine/core";
 
 function getYesterdayDateString(): string {
   const d = new Date();
@@ -51,39 +52,40 @@ export function Practice() {
 
   if (loading) {
     return (
-      <div className="w-full min-h-screen flex flex-col items-center justify-center px-4 py-6">
-        <p className="text-gray-500">Loading puzzle…</p>
-      </div>
+      <Center component="div" w="100%" mih="100vh" py="md" px="md" style={{ flexDirection: "column" }}>
+        <Text size="sm" c="dimmed">Loading puzzle…</Text>
+      </Center>
     );
   }
 
   if (error || !daily) {
     return (
-      <div className="w-full min-h-screen flex flex-col items-center justify-center px-4 py-6 gap-4">
-        <p className="text-red-600">{error ?? "Could not load puzzle."}</p>
-        <Link to="/" className="text-[#007AFF] hover:underline">
-          Back to today's puzzle
-        </Link>
-      </div>
+      <Center component="div" w="100%" mih="100vh" py="md" px="md" style={{ flexDirection: "column", gap: 16 }}>
+        <Text size="sm" c="red">{error ?? "Could not load puzzle."}</Text>
+        <Button component={Link} to="/" variant="subtle" color="primary">
+          Back to today&apos;s puzzle
+        </Button>
+      </Center>
     );
   }
 
   const isYesterday = date === getYesterdayDateString();
 
   return (
-    <div className="w-full min-h-screen flex flex-col items-center px-4 py-6 sm:py-8">
-      <div className="w-full max-w-[600px] mx-auto">
-        <div className="flex items-center justify-between mb-4">
-          <Link to="/" className="text-sm text-gray-600 hover:text-gray-900">
-            ← Today's puzzle
-          </Link>
-          <span className="text-xs text-gray-500">
-            {isYesterday ? "Yesterday's puzzle" : date} — practice mode (no
-            stakes)
-          </span>
-        </div>
+    <Box w="100%" mih="100vh" py="md" px="md" style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+      <Box w="100%" maw={600} mx="auto">
+        <Stack gap="md" mb="md">
+          <Box style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <Button component={Link} to="/" variant="subtle" size="sm" color="gray">
+              ← Today&apos;s puzzle
+            </Button>
+            <Text size="xs" c="dimmed">
+              {isYesterday ? "Yesterday's puzzle" : date} — practice mode (no stakes)
+            </Text>
+          </Box>
+        </Stack>
         <Play previewPuzzle={daily.puzzle} initialOrder={daily.initialOrder} />
-      </div>
-    </div>
+      </Box>
+    </Box>
   );
 }

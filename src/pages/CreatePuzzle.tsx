@@ -6,6 +6,18 @@ import { createPuzzle } from "../api/puzzles";
 import { useScreenshotOCR } from "../hooks/useScreenshotOCR";
 import { Play } from "./Play";
 import { ArrowUpIcon, ArrowDownIcon } from "../components/Icons";
+import {
+  Box,
+  Stack,
+  Group,
+  Title,
+  Text,
+  TextInput,
+  Button,
+  Select,
+  Paper,
+  Alert,
+} from "@mantine/core";
 
 const MIN_MESSAGES = 2;
 const MAX_MESSAGES = 30;
@@ -44,7 +56,6 @@ export function CreatePuzzle() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { extractText, loading: ocrLoading, error: ocrError } = useScreenshotOCR();
 
-  // Initialize manual mode with 2 blank messages if empty
   useEffect(() => {
     if (inputMode === "manual" && messages.length < MIN_MESSAGES) {
       const blanks = Array.from({ length: MIN_MESSAGES }, (_, i) => blankMessage(i));
@@ -135,6 +146,7 @@ export function CreatePuzzle() {
     },
     [handleScreenshotFile]
   );
+
   const removeConstraint = useCallback((index: number) => {
     if (constraints.length <= 1) return;
     setConstraints((prev) => prev.filter((_, i) => i !== index));
@@ -171,79 +183,82 @@ export function CreatePuzzle() {
 
   if (preview) {
     return (
-      <div className="w-full max-w-[600px] mx-auto px-4 py-6">
-        <button
-          type="button"
-          onClick={() => setPreview(false)}
-          className="mb-4 text-sm text-gray-600 hover:text-gray-900"
-        >
+      <Box w="100%" maw={600} mx="auto" px="md" py="md">
+        <Button variant="subtle" size="sm" color="gray" mb="sm" onClick={() => setPreview(false)}>
           Back to creator
-        </button>
+        </Button>
         <Play previewPuzzle={puzzle} />
-      </div>
+      </Box>
     );
   }
 
   return (
-    <div className="w-full max-w-[600px] mx-auto px-4 py-6 sm:py-8">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-medium text-gray-900">Create re:chat</h1>
-        <Link to="/" className="text-sm text-gray-600 hover:text-gray-900">
+    <Box w="100%" maw={600} mx="auto" px="md" py="md">
+      <Group justify="space-between" align="center" mb="lg">
+        <Title order={1} size="h3" fw={500}>
+          Create re:chat
+        </Title>
+        <Button component={Link} to="/" variant="subtle" size="sm" color="gray">
           Back home
-        </Link>
-      </div>
+        </Button>
+      </Group>
 
-      {/* Step indicator */}
-      <div className="flex gap-2 mb-8">
+      <Group gap="xs" mb="lg">
         {([1, 2, 3] as Step[]).map((s) => (
-          <div
+          <Box
             key={s}
-            className={`h-1 flex-1 rounded-full ${
-              s <= step ? "bg-gray-900" : "bg-gray-200"
-            }`}
+            style={{
+              height: 4,
+              flex: 1,
+              borderRadius: 9999,
+              backgroundColor: s <= step ? "#111827" : "#e5e7eb",
+            }}
           />
         ))}
-      </div>
+      </Group>
 
       {step === 1 && (
-        <section>
-          <h2 className="text-sm font-medium text-gray-700 mb-2">Add your chat</h2>
-          <div className="flex gap-2 mb-4">
-            <button
-              type="button"
+        <Stack gap="md">
+          <Text size="sm" fw={500} c="dimmed">
+            Add your chat
+          </Text>
+          <Group gap="xs">
+            <Button
+              variant={inputMode === "screenshot" ? "filled" : "light"}
+              color="dark"
+              size="sm"
+              radius="md"
               onClick={() => setInputMode("screenshot")}
-              className={`px-3 py-1.5 text-sm rounded-lg ${
-                inputMode === "screenshot"
-                  ? "bg-gray-900 text-white"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-              }`}
             >
               Screenshot
-            </button>
-            <button
-              type="button"
+            </Button>
+            <Button
+              variant={inputMode === "manual" ? "filled" : "light"}
+              color="dark"
+              size="sm"
+              radius="md"
               onClick={() => setInputMode("manual")}
-              className={`px-3 py-1.5 text-sm rounded-lg ${
-                inputMode === "manual"
-                  ? "bg-gray-900 text-white"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-              }`}
             >
               Add manually
-            </button>
-          </div>
+            </Button>
+          </Group>
 
           {inputMode === "screenshot" && (
-            <div className="space-y-3">
-              <div
+            <Stack gap="sm">
+              <Paper
+                radius="lg"
+                p="xl"
+                ta="center"
                 onDrop={(e) => !ocrLoading && handleDrop(e)}
                 onDragOver={(e) => e.preventDefault()}
                 onClick={() => !ocrLoading && fileInputRef.current?.click()}
-                className={`border-2 border-dashed rounded-xl p-8 text-center transition-colors ${
-                  ocrLoading
-                    ? "border-gray-200 bg-gray-50 cursor-wait text-gray-400"
-                    : "border-gray-300 text-gray-500 cursor-pointer hover:border-gray-400 hover:bg-gray-50/50"
-                }`}
+                style={{
+                  border: "2px dashed",
+                  borderColor: ocrLoading ? "#e5e7eb" : "#d1d5db",
+                  backgroundColor: ocrLoading ? "#f9fafb" : "transparent",
+                  cursor: ocrLoading ? "wait" : "pointer",
+                  transition: "all 0.2s",
+                }}
               >
                 <input
                   ref={fileInputRef}
@@ -251,253 +266,291 @@ export function CreatePuzzle() {
                   accept="image/*"
                   onChange={handleFileSelect}
                   disabled={ocrLoading}
-                  className="hidden"
+                  style={{ display: "none" }}
                 />
                 {ocrLoading ? (
-                  <p className="text-gray-600">Reading your screenshot…</p>
+                  <Text size="sm" c="dimmed">Reading your screenshot…</Text>
                 ) : (
-                  <>
-                    <p className="mb-1">Drop a screenshot or tap to upload</p>
-                    <p className="text-xs">Works with chat screenshots from iMessage, WhatsApp, etc.</p>
-                  </>
+                  <Stack gap={4}>
+                    <Text size="sm" c="dimmed">Drop a screenshot or tap to upload</Text>
+                    <Text size="xs" c="dimmed">Works with chat screenshots from iMessage, WhatsApp, etc.</Text>
+                  </Stack>
                 )}
-              </div>
+              </Paper>
               {ocrError && (
-                <p className="text-sm text-red-600">
+                <Text size="sm" c="red">
                   {ocrError}. Try pasting text or adding manually.
-                </p>
+                </Text>
               )}
               {messages.length > 0 && (
-                <div className="space-y-2">
-                  <p className="text-xs text-gray-500">Parsed messages – edit if needed:</p>
+                <Stack gap="xs">
+                  <Text size="xs" c="dimmed">Parsed messages – edit if needed:</Text>
                   {messages.map((msg, i) => (
-                    <div key={msg.id} className="flex gap-2 items-center">
-                      <select
+                    <Group key={msg.id} gap="xs" align="center">
+                      <Select
                         value={msg.speaker}
-                        onChange={(e) => updateMessage(i, "speaker", e.target.value)}
-                        className="border border-gray-300 rounded-lg px-2 py-1.5 text-sm w-20"
-                      >
-                        <option value="A">A</option>
-                        <option value="B">B</option>
-                      </select>
-                      <input
-                        type="text"
+                        onChange={(v) => updateMessage(i, "speaker", v ?? "A")}
+                        data={["A", "B"]}
+                        size="sm"
+                        w={80}
+                        radius="md"
+                      />
+                      <TextInput
                         value={msg.text}
                         onChange={(e) => updateMessage(i, "text", e.target.value)}
-                        className="flex-1 border border-gray-300 rounded-lg px-3 py-1.5 text-sm"
+                        size="sm"
+                        radius="md"
+                        style={{ flex: 1 }}
                       />
-                      <button
-                        type="button"
+                      <Button
+                        variant="subtle"
+                        color="red"
+                        size="sm"
                         onClick={() => removeMessage(i)}
                         disabled={messages.length <= MIN_MESSAGES}
-                        className="text-red-600 hover:text-red-800 disabled:opacity-30 text-sm"
                       >
                         Remove
-                      </button>
-                    </div>
+                      </Button>
+                    </Group>
                   ))}
-                </div>
+                </Stack>
               )}
-              <p className="text-xs text-gray-400">
+              <Text size="xs" c="dimmed">
                 Looks wrong? Edit above or{" "}
-                <button
-                  type="button"
-                  onClick={() => setInputMode("manual")}
-                  className="underline hover:text-gray-600"
-                >
+                <Button variant="subtle" size="xs" onClick={() => setInputMode("manual")} style={{ display: "inline", verticalAlign: "baseline" }}>
                   add manually
-                </button>{" "}
+                </Button>{" "}
                 instead.
-              </p>
-            </div>
+              </Text>
+            </Stack>
           )}
 
           {inputMode === "manual" && (
-            <div className="space-y-3">
+            <Stack gap="sm">
               {messages.map((msg, i) => (
-                <div key={msg.id} className="flex gap-2 items-center">
-                  <select
+                <Group key={msg.id} gap="xs" align="center">
+                  <Select
                     value={msg.speaker}
-                    onChange={(e) => updateMessage(i, "speaker", e.target.value)}
-                    className="border border-gray-300 rounded-lg px-2 py-2 text-sm w-20"
-                  >
-                    <option value="A">A</option>
-                    <option value="B">B</option>
-                  </select>
-                  <input
-                    type="text"
+                    onChange={(v) => updateMessage(i, "speaker", v ?? "A")}
+                    data={["A", "B"]}
+                    size="sm"
+                    w={80}
+                    radius="md"
+                  />
+                  <TextInput
                     value={msg.text}
                     onChange={(e) => updateMessage(i, "text", e.target.value)}
                     placeholder="Message text"
-                    className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                    size="sm"
+                    radius="md"
+                    style={{ flex: 1 }}
                   />
-                  <button
-                    type="button"
+                  <Button
+                    variant="subtle"
+                    color="red"
+                    size="sm"
                     onClick={() => removeMessage(i)}
                     disabled={messages.length <= MIN_MESSAGES}
-                    className="text-red-600 hover:text-red-800 disabled:opacity-30 text-sm"
                   >
                     Remove
-                  </button>
-                </div>
+                  </Button>
+                </Group>
               ))}
-              <button
-                type="button"
+              <Button
+                variant="subtle"
+                size="sm"
+                color="gray"
                 onClick={addMessage}
                 disabled={messages.length >= MAX_MESSAGES}
-                className="text-sm text-gray-600 hover:text-gray-900 disabled:opacity-50"
               >
                 + Add message
-              </button>
-            </div>
+              </Button>
+            </Stack>
           )}
 
-          <button
-            type="button"
-            onClick={() => setStep(2)}
+          <Button
+            variant="filled"
+            color="dark"
+            size="md"
+            fw={500}
+            radius="lg"
             disabled={!canProceedStep1}
-            className="mt-6 min-h-[44px] px-6 py-3 bg-gray-900 text-white text-sm font-medium rounded-xl hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            onClick={() => setStep(2)}
+            style={{ minHeight: 44 }}
           >
             Continue
-          </button>
-        </section>
+          </Button>
+        </Stack>
       )}
 
       {step === 2 && (
-        <section>
-          <h2 className="text-sm font-medium text-gray-700 mb-2">
+        <Stack gap="md">
+          <Text size="sm" fw={500} c="dimmed">
             Confirm or reorder – this is the order solvers must find
-          </h2>
-          <div className="space-y-2 mb-6">
+          </Text>
+          <Stack gap="xs" mb="lg">
             {correctOrder.map((id, i) => {
               const msg = messages.find((m) => m.id === id);
               if (!msg) return null;
               const isSent = msg.speaker === "A";
               return (
-                <div
-                  key={id}
-                  className={`flex items-center gap-2 ${isSent ? "justify-end" : ""}`}
-                >
-                  <div className="flex flex-col shrink-0 gap-0.5">
-                    <button
-                      type="button"
+                <Group key={id} gap="xs" justify={isSent ? "flex-end" : "flex-start"}>
+                  <Group gap={2}>
+                    <Button
+                      variant="subtle"
+                      size="xs"
                       onClick={() => moveInOrder(i, "up")}
                       disabled={i === 0}
-                      className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-30"
+                      styles={{ inner: { justifyContent: "center", alignItems: "center" } }}
                     >
-                      <ArrowUpIcon className="w-5 h-5 text-gray-600" />
-                    </button>
-                    <button
-                      type="button"
+                      <ArrowUpIcon />
+                    </Button>
+                    <Button
+                      variant="subtle"
+                      size="xs"
                       onClick={() => moveInOrder(i, "down")}
                       disabled={i === correctOrder.length - 1}
-                      className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-30"
+                      styles={{ inner: { justifyContent: "center", alignItems: "center" } }}
                     >
-                      <ArrowDownIcon className="w-5 h-5 text-gray-600" />
-                    </button>
-                  </div>
-                  <div
-                    className={`flex-shrink-0 max-w-[85%] px-4 py-3 rounded-2xl text-[15px] ${
-                      isSent ? "rounded-br-md bg-[#007AFF] text-white" : "rounded-bl-md bg-[#E5E5EA] text-gray-900"
-                    }`}
+                      <ArrowDownIcon />
+                    </Button>
+                  </Group>
+                  <Box
+                    style={{
+                      maxWidth: "85%",
+                      padding: "12px 16px",
+                      borderRadius: 16,
+                      fontSize: 15,
+                      ...(isSent
+                        ? { borderBottomRightRadius: 4, background: "#007AFF", color: "white" }
+                        : { borderBottomLeftRadius: 4, background: "#E5E5EA", color: "#111" }),
+                    }}
                   >
                     {msg.text}
-                  </div>
-                </div>
+                  </Box>
+                </Group>
               );
             })}
-          </div>
-          <div className="flex gap-3">
-            <button
-              type="button"
+          </Stack>
+          <Group gap="md">
+            <Button
+              variant="outline"
+              color="gray"
+              size="md"
+              fw={500}
+              radius="lg"
               onClick={() => setStep(1)}
-              className="min-h-[44px] px-6 py-3 border border-gray-300 text-gray-700 text-sm font-medium rounded-xl hover:bg-gray-50"
+              style={{ minHeight: 44 }}
             >
               Back
-            </button>
-            <button
-              type="button"
+            </Button>
+            <Button
+              variant="filled"
+              color="dark"
+              size="md"
+              fw={500}
+              radius="lg"
               onClick={() => setStep(3)}
-              className="min-h-[44px] px-6 py-3 bg-gray-900 text-white text-sm font-medium rounded-xl hover:bg-gray-800"
+              style={{ minHeight: 44 }}
             >
               Continue
-            </button>
-          </div>
-        </section>
+            </Button>
+          </Group>
+        </Stack>
       )}
 
       {step === 3 && (
-        <section>
-          <h2 className="text-sm font-medium text-gray-700 mb-2">Hints (optional)</h2>
-          <p className="text-xs text-gray-500 mb-3">Add hints to help solvers.</p>
-          <div className="space-y-2 mb-6">
+        <Stack gap="md">
+          <Text size="sm" fw={500} c="dimmed">
+            Hints (optional)
+          </Text>
+          <Text size="xs" c="dimmed" mb="xs">
+            Add hints to help solvers.
+          </Text>
+          <Stack gap="xs" mb="lg">
             {constraints.map((c, i) => (
-              <div key={i} className="flex gap-2">
-                <input
-                  type="text"
+              <Group key={i} gap="xs">
+                <TextInput
                   value={c}
                   onChange={(e) => updateConstraint(i, e.target.value)}
                   placeholder={`Hint ${i + 1}`}
-                  className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                  size="sm"
+                  radius="md"
+                  style={{ flex: 1 }}
                 />
-                <button
-                  type="button"
+                <Button
+                  variant="subtle"
+                  color="red"
+                  size="sm"
                   onClick={() => removeConstraint(i)}
                   disabled={constraints.length <= 1}
-                  className="text-red-600 hover:text-red-800 disabled:opacity-30 text-sm"
                 >
                   Remove
-                </button>
-              </div>
+                </Button>
+              </Group>
             ))}
-            <button
-              type="button"
-              onClick={addConstraint}
-              className="text-sm text-gray-600 hover:text-gray-900"
-            >
+            <Button variant="subtle" size="sm" color="gray" onClick={addConstraint}>
               + Add hint
-            </button>
-          </div>
+            </Button>
+          </Stack>
 
           {!publishedId ? (
             <>
               {publishError && (
-                <p className="text-sm text-red-600 mb-3">{publishError}</p>
+                <Alert color="red" variant="light" mb="md">
+                  {publishError}
+                </Alert>
               )}
-              <div className="flex gap-3">
-                <button
-                  type="button"
+              <Group gap="md">
+                <Button
+                  variant="outline"
+                  color="gray"
+                  size="md"
+                  fw={500}
+                  radius="lg"
                   onClick={() => setStep(2)}
-                  className="min-h-[44px] px-6 py-3 border border-gray-300 text-gray-700 text-sm font-medium rounded-xl hover:bg-gray-50"
+                  style={{ minHeight: 44 }}
                 >
                   Back
-                </button>
-                <button
-                  type="button"
+                </Button>
+                <Button
+                  variant="outline"
+                  color="gray"
+                  size="md"
+                  fw={500}
+                  radius="lg"
                   onClick={() => setPreview(true)}
-                  className="min-h-[44px] px-6 py-3 border border-gray-300 text-gray-700 text-sm font-medium rounded-xl hover:bg-gray-50"
+                  style={{ minHeight: 44 }}
                 >
                   Preview
-                </button>
-                <button
+                </Button>
+                <Button
+                  variant="filled"
+                  color="dark"
+                  size="md"
+                  fw={500}
+                  radius="lg"
+                  loading={isPublishing}
+                  disabled={!canPublish}
                   onClick={handlePublish}
-                  disabled={isPublishing || !canPublish}
-                  className="min-h-[44px] px-6 py-3 bg-gray-900 text-white text-sm font-medium rounded-xl hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{ minHeight: 44 }}
                 >
                   {isPublishing ? "Publishing…" : "Create & get link"}
-                </button>
-              </div>
+                </Button>
+              </Group>
             </>
           ) : (
-            <div className="rounded-2xl border border-gray-200 bg-white p-5 sm:p-6 shadow-sm">
-              <p className="font-medium text-gray-900 mb-1">Your re:chat is ready</p>
-              <p className="text-sm text-gray-500 mb-4">Share the link or embed it.</p>
+            <Paper radius="lg" withBorder p="lg" shadow="sm">
+              <Text fw={500} mb={4}>Your re:chat is ready</Text>
+              <Text size="sm" c="dimmed" mb="md">
+                Share the link or embed it.
+              </Text>
               <ShareBlock id={publishedId} />
-            </div>
+            </Paper>
           )}
-        </section>
+        </Stack>
       )}
-    </div>
+    </Box>
   );
 }
 
@@ -521,49 +574,58 @@ function ShareBlock({ id }: { id: string }) {
   };
 
   return (
-    <div className="space-y-4">
-      <div>
-        <label className="block text-xs font-medium text-gray-500 mb-1.5">Share link</label>
-        <div className="flex gap-2">
-          <input
-            type="text"
-            readOnly
+    <Stack gap="md">
+      <Box>
+        <Text size="xs" fw={500} c="dimmed" mb="xs" component="label">
+          Share link
+        </Text>
+        <Group gap="xs">
+          <TextInput
             value={shareUrl}
-            className="flex-1 border border-gray-200 rounded-xl px-3 py-2.5 bg-gray-50 text-gray-900 text-sm"
+            readOnly
+            size="sm"
+            radius="lg"
+            style={{ flex: 1 }}
+            styles={{ input: { backgroundColor: "#f9fafb" } }}
           />
-          <button
-            type="button"
+          <Button
+            variant="filled"
+            color="primary"
+            size="sm"
+            radius="lg"
             onClick={copyLink}
-            className="px-4 py-2.5 bg-[#007AFF] text-white text-sm font-medium rounded-xl hover:bg-[#0066DD] shrink-0"
           >
             {copiedLink ? "Copied!" : "Copy"}
-          </button>
-        </div>
-      </div>
-      <div>
-        <label className="block text-xs font-medium text-gray-500 mb-1.5">Embed code</label>
-        <div className="flex gap-2">
-          <input
-            type="text"
-            readOnly
+          </Button>
+        </Group>
+      </Box>
+      <Box>
+        <Text size="xs" fw={500} c="dimmed" mb="xs" component="label">
+          Embed code
+        </Text>
+        <Group gap="xs">
+          <TextInput
             value={embedCode}
-            className="flex-1 border border-gray-200 rounded-xl px-3 py-2.5 bg-gray-50 text-gray-900 font-mono text-xs"
+            readOnly
+            size="xs"
+            radius="lg"
+            style={{ flex: 1, fontFamily: "monospace" }}
+            styles={{ input: { backgroundColor: "#f9fafb" } }}
           />
-          <button
-            type="button"
+          <Button
+            variant="filled"
+            color="primary"
+            size="sm"
+            radius="lg"
             onClick={copyEmbed}
-            className="px-4 py-2.5 bg-[#007AFF] text-white text-sm font-medium rounded-xl hover:bg-[#0066DD] shrink-0"
           >
             {copiedEmbed ? "Copied!" : "Copy"}
-          </button>
-        </div>
-      </div>
-      <Link
-        to={`/p/${id}`}
-        className="inline-block text-sm text-[#007AFF] hover:underline"
-      >
+          </Button>
+        </Group>
+      </Box>
+      <Button component={Link} to={`/p/${id}`} variant="subtle" size="sm" color="primary">
         Open puzzle →
-      </Link>
-    </div>
+      </Button>
+    </Stack>
   );
 }

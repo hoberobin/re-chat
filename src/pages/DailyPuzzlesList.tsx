@@ -2,8 +2,17 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { listDailyPuzzles, deleteDailyPuzzle } from "../api/puzzles";
 import type { DailyPuzzleListItem } from "../api/puzzles";
-
-const FONT = '-apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif';
+import {
+  Box,
+  Group,
+  Title,
+  Text,
+  Button,
+  Anchor,
+  Paper,
+  Table,
+  Alert,
+} from "@mantine/core";
 
 export function DailyPuzzlesList() {
   const [items, setItems] = useState<DailyPuzzleListItem[]>([]);
@@ -48,135 +57,102 @@ export function DailyPuzzlesList() {
   };
 
   return (
-    <div
+    <Box
+      component="div"
       style={{
         minHeight: "100vh",
         background: "#f5f5f7",
-        fontFamily: FONT,
         padding: 24,
       }}
     >
-      <div style={{ maxWidth: 800, margin: "0 auto" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
-          <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>Daily puzzles</h1>
-          <Link
-            to="/puzzle/new"
-            style={{
-              padding: "10px 20px",
-              background: "#007AFF",
-              color: "#fff",
-              textDecoration: "none",
-              borderRadius: 10,
-              fontWeight: 600,
-              fontSize: 15,
-            }}
-          >
+      <Box style={{ maxWidth: 800, margin: "0 auto" }}>
+        <Group justify="space-between" align="center" mb={24}>
+          <Title order={1} size="h3" fw={700} style={{ margin: 0 }}>
+            Daily puzzles
+          </Title>
+          <Button component={Link} to="/puzzle/new" variant="filled" radius="md" fw={600} size="md">
             Create puzzle
-          </Link>
-        </div>
+          </Button>
+        </Group>
 
         {error && (
-          <div
-            style={{
-              padding: 12,
-              background: "#ffebee",
-              color: "#c62828",
-              borderRadius: 8,
-              marginBottom: 16,
-            }}
-          >
+          <Alert color="red" variant="light" radius="md" mb={16}>
             {error}
-          </div>
+          </Alert>
         )}
 
         {loading ? (
-          <p style={{ color: "#6b6b70" }}>Loading…</p>
+          <Text size="sm" c="dimmed">
+            Loading…
+          </Text>
         ) : items.length === 0 ? (
-          <div
-            style={{
-              padding: 48,
-              textAlign: "center",
-              background: "#fff",
-              borderRadius: 12,
-              border: "1px dashed #d1d1d6",
-            }}
+          <Paper
+            p={48}
+            ta="center"
+            radius="lg"
+            withBorder
+            style={{ borderStyle: "dashed", borderColor: "#d1d1d6" }}
           >
-            <p style={{ color: "#6b6b70", marginBottom: 16 }}>No puzzles yet.</p>
-            <Link
-              to="/puzzle/new"
-              style={{
-                padding: "10px 20px",
-                background: "#007AFF",
-                color: "#fff",
-                textDecoration: "none",
-                borderRadius: 10,
-                fontWeight: 600,
-              }}
-            >
+            <Text size="sm" c="dimmed" mb={16}>
+              No puzzles yet.
+            </Text>
+            <Button component={Link} to="/puzzle/new" variant="filled" radius="md" fw={600}>
               Create your first puzzle
-            </Link>
-          </div>
+            </Button>
+          </Paper>
         ) : (
-          <div
-            style={{
-              background: "#fff",
-              borderRadius: 12,
-              overflow: "hidden",
-              boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
-            }}
-          >
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
-              <thead>
-                <tr style={{ background: "#f9f9f9", borderBottom: "1px solid #e5e5ea" }}>
-                  <th style={{ textAlign: "left", padding: "12px 16px", fontSize: 12, fontWeight: 600, color: "#6b6b70" }}>Date</th>
-                  <th style={{ textAlign: "left", padding: "12px 16px", fontSize: 12, fontWeight: 600, color: "#6b6b70" }}>Title</th>
-                  <th style={{ textAlign: "left", padding: "12px 16px", fontSize: 12, fontWeight: 600, color: "#6b6b70" }}>ID</th>
-                  <th style={{ textAlign: "right", padding: "12px 16px", fontSize: 12, fontWeight: 600, color: "#6b6b70" }}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
+          <Paper radius="lg" shadow="sm" style={{ overflow: "hidden" }}>
+            <Table>
+              <Table.Thead>
+                <Table.Tr style={{ background: "#f9f9f9", borderBottom: "1px solid #e5e5ea" }}>
+                  <Table.Th style={{ padding: "12px 16px", fontSize: 12, fontWeight: 600, color: "#6b6b70" }}>
+                    Date
+                  </Table.Th>
+                  <Table.Th style={{ padding: "12px 16px", fontSize: 12, fontWeight: 600, color: "#6b6b70" }}>
+                    Title
+                  </Table.Th>
+                  <Table.Th style={{ padding: "12px 16px", fontSize: 12, fontWeight: 600, color: "#6b6b70" }}>
+                    ID
+                  </Table.Th>
+                  <Table.Th ta="right" style={{ padding: "12px 16px", fontSize: 12, fontWeight: 600, color: "#6b6b70" }}>
+                    Actions
+                  </Table.Th>
+                </Table.Tr>
+              </Table.Thead>
+              <Table.Tbody>
                 {items.map((p) => (
-                  <tr key={p.id} style={{ borderBottom: "1px solid #f0f0f0" }}>
-                    <td style={{ padding: "12px 16px", fontSize: 14 }}>{p.date}</td>
-                    <td style={{ padding: "12px 16px", fontSize: 14, fontWeight: 500 }}>{p.title}</td>
-                    <td style={{ padding: "12px 16px", fontSize: 13, color: "#6b6b70", fontFamily: "monospace" }}>{p.id}</td>
-                    <td style={{ padding: "12px 16px", textAlign: "right" }}>
-                      <Link
-                        to={`/puzzle/${p.id}?preview=true`}
-                        style={{ marginRight: 8, fontSize: 13, color: "#007AFF", textDecoration: "none" }}
-                      >
+                  <Table.Tr key={p.id} style={{ borderBottom: "1px solid #f0f0f0" }}>
+                    <Table.Td style={{ padding: "12px 16px", fontSize: 14 }}>{p.date}</Table.Td>
+                    <Table.Td style={{ padding: "12px 16px", fontSize: 14, fontWeight: 500 }}>{p.title}</Table.Td>
+                    <Table.Td style={{ padding: "12px 16px", fontSize: 13, color: "#6b6b70", fontFamily: "monospace" }}>
+                      {p.id}
+                    </Table.Td>
+                    <Table.Td ta="right" style={{ padding: "12px 16px" }}>
+                      <Anchor component={Link} to={`/puzzle/${p.id}?preview=true`} mr={8} size="sm" c="#007AFF">
                         Preview
-                      </Link>
-                      <Link
-                        to={`/puzzle/${p.id}`}
-                        style={{ marginRight: 8, fontSize: 13, color: "#007AFF", textDecoration: "none" }}
-                      >
+                      </Anchor>
+                      <Anchor component={Link} to={`/puzzle/${p.id}`} mr={8} size="sm" c="#007AFF">
                         Edit
-                      </Link>
-                      <button
+                      </Anchor>
+                      <Button
                         type="button"
+                        variant={confirmDeleteId === p.id ? "filled" : "outline"}
+                        color="red"
+                        size="xs"
+                        radius="sm"
+                        loading={deletingId === p.id}
                         onClick={() => handleDelete(p.id)}
-                        disabled={deletingId === p.id}
-                        style={{
-                          fontSize: 13,
-                          color: confirmDeleteId === p.id ? "#fff" : "#FF3B30",
-                          background: confirmDeleteId === p.id ? "#FF3B30" : "transparent",
-                          border: "1px solid #FF3B30",
-                          borderRadius: 6,
-                          padding: "4px 10px",
-                          cursor: deletingId === p.id ? "wait" : "pointer",
-                        }}
                       >
                         {confirmDeleteId === p.id ? "Confirm delete?" : "Delete"}
-                      </button>
-                    </td>
-                  </tr>
+                      </Button>
+                    </Table.Td>
+                  </Table.Tr>
                 ))}
-              </tbody>
-            </table>
-          </div>
+              </Table.Tbody>
+            </Table>
+          </Paper>
         )}
-      </div>
-    </div>
+      </Box>
+    </Box>
   );
 }

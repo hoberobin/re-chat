@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faLightbulb } from "@fortawesome/free-solid-svg-icons";
+import { Box, Button, Paper, Text, Stack } from "@mantine/core";
 
 interface HintIconProps {
   hints: string[];
@@ -30,46 +31,76 @@ export function HintIcon({ hints, onRevealMore, isHighlighted, onOpen }: HintIco
   };
 
   return (
-    <div className="relative inline-block" ref={ref}>
-      <button
+    <Box ref={ref} style={{ position: "relative", display: "inline-block" }}>
+      <Button
+        variant="subtle"
         type="button"
         onClick={handleToggle}
         aria-label="View hints"
-        className={`w-11 h-11 rounded-full text-amber-500 hover:text-amber-600 hover:bg-amber-50 transition-colors touch-manipulation flex items-center justify-center ${isHighlighted ? "hint-glow" : ""}`}
+        aria-expanded={open}
+        p="xs"
+        className={isHighlighted ? "hint-glow" : ""}
+        style={{
+          width: 44,
+          height: 44,
+          borderRadius: "50%",
+          color: "var(--mantine-color-yellow-6)",
+          background: "transparent",
+          touchAction: "manipulation",
+        }}
+        styles={{ inner: { justifyContent: "center", alignItems: "center" } }}
       >
-        <FontAwesomeIcon icon={faLightbulb} className="w-5 h-5" />
-      </button>
+        <FontAwesomeIcon icon={faLightbulb} style={{ width: 20, height: 20 }} />
+      </Button>
       {open && (
-        <div
-          className="absolute right-0 top-full mt-2 z-50 min-w-[200px] max-w-[280px] rounded-xl bg-white shadow-lg border border-gray-200 py-3 px-4 animate-fade-in"
+        <Paper
+          shadow="lg"
+          radius="lg"
+          p="md"
+          className="animate-fade-in"
           role="dialog"
           aria-label="Hints"
+          style={{
+            position: "absolute",
+            right: 0,
+            top: "100%",
+            marginTop: 8,
+            zIndex: 50,
+            minWidth: 200,
+            maxWidth: 280,
+            border: "1px solid #e5e7eb",
+          }}
         >
-          <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-2">
+          <Text size="xs" fw={600} c="dimmed" tt="uppercase" lts="0.05em" mb="xs">
             Hints
-          </p>
+          </Text>
           {hints.length > 0 ? (
-            <ul className="text-sm text-gray-600 space-y-1">
+            <Stack gap={4}>
               {hints.map((c, i) => (
-                <li key={i}>{c}</li>
+                <Text key={i} size="sm" c="dimmed">
+                  {c}
+                </Text>
               ))}
-            </ul>
+            </Stack>
           ) : (
-            <p className="text-sm text-gray-500 mb-2">
+            <Text size="sm" c="dimmed" mb="xs">
               Need a hint? Struggling will reveal hints.
-            </p>
+            </Text>
           )}
           {onRevealMore && (
-            <button
-              type="button"
+            <Button
+              variant="subtle"
+              size="sm"
+              color="gray"
               onClick={onRevealMore}
-              className="mt-2 text-sm text-gray-600 hover:text-gray-900 underline"
+              mt="xs"
+              style={{ alignSelf: "flex-start", textDecoration: "underline" }}
             >
               Another hint
-            </button>
+            </Button>
           )}
-        </div>
+        </Paper>
       )}
-    </div>
+    </Box>
   );
 }

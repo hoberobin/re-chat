@@ -3,21 +3,14 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faQuestionCircle } from "@fortawesome/free-solid-svg-icons";
 import type { ChatMessage } from "../types/puzzle";
 import { getSenderColor, getOrderedSenders } from "../utils/chatColors";
-
-const FONT = '-apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif';
-
-// ---------------------------------------------------------------------------
-// Exported header — compact; "Your task" in icon popover to save space
-// ---------------------------------------------------------------------------
+import { Box, Group, Stack, Text, Button, Paper } from "@mantine/core";
 
 interface ChatThreadHeaderProps {
   chatName: string;
   isGroup: boolean;
   uniqueSenders: number;
   premise?: string;
-  /** When set (e.g. daily flow), use as main line (hook) instead of chatName */
   title?: string;
-  /** When set, use as subline instead of "Group · N people" */
   subtitle?: string;
 }
 
@@ -51,88 +44,81 @@ export function ChatThreadHeader({
   }, [taskOpen]);
 
   return (
-    <div
+    <Group
+      justify="space-between"
+      align="center"
+      gap="sm"
+      px="md"
+      py="xs"
       style={{
-        position: "relative",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        gap: 12,
-        padding: "10px 12px 10px 16px",
         minHeight: 44,
         borderBottom: "1px solid #e0e0e0",
         background: "#fff",
-        fontFamily: FONT,
         flexShrink: 0,
       }}
     >
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontWeight: 600, fontSize: 15, color: "#1c1c1e" }}>
+      <Box style={{ flex: 1, minWidth: 0 }}>
+        <Text size="sm" fw={600} c="dark">
           {displayTitle}
-        </div>
+        </Text>
         {displaySubtitle != null && displaySubtitle !== "" && (
-          <div style={{ fontSize: 12, color: "#6b6b70", marginTop: 1 }}>
+          <Text size="xs" c="dimmed" mt={1}>
             {displaySubtitle}
-          </div>
+          </Text>
         )}
-      </div>
+      </Box>
 
       {premise && (
-        <div ref={popoverRef} style={{ position: "relative", flexShrink: 0 }}>
-          <button
+        <Box ref={popoverRef} style={{ position: "relative", flexShrink: 0 }}>
+          <Button
+            variant="subtle"
             type="button"
             onClick={() => setTaskOpen((o) => !o)}
             aria-label="Your task / instructions"
             aria-expanded={taskOpen}
+            size="compact-md"
             style={{
-              width: 36,
-              height: 36,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              border: "none",
+              width: 40,
+              height: 40,
               background: taskOpen ? "#f0f4ff" : "transparent",
-              borderRadius: 8,
               color: "#5b7cff",
-              cursor: "pointer",
+            }}
+            styles={{
+              root: { overflow: "visible" },
+              inner: { justifyContent: "center", alignItems: "center", overflow: "visible" },
             }}
           >
-            <FontAwesomeIcon icon={faQuestionCircle} style={{ fontSize: 20 }} />
-          </button>
+            <FontAwesomeIcon icon={faQuestionCircle} style={{ fontSize: 18 }} />
+          </Button>
 
           {taskOpen && (
-            <div
+            <Paper
+              shadow="md"
+              radius="lg"
+              p="md"
               style={{
                 position: "absolute",
                 top: "100%",
                 right: 0,
                 marginTop: 6,
                 width: "min(320px, calc(100vw - 24px))",
-                background: "#fff",
-                borderRadius: 12,
-                boxShadow: "0 4px 20px rgba(0,0,0,0.12)",
                 border: "1px solid #e5e5ea",
-                padding: "14px 16px",
                 zIndex: 50,
               }}
             >
-              <div style={{ fontSize: 11, fontWeight: 700, color: "#5b7cff", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>
-                How it works
-              </div>
-              <div style={{ fontSize: 14, color: "#1c1c1e", lineHeight: 1.5, fontWeight: 500 }}>
+              <Text size="xs" fw={700} c="#5b7cff" tt="uppercase" lts="0.06em" mb="xs">
+                Objective
+              </Text>
+              <Text size="sm" c="dark" lh={1.5} fw={500}>
                 {premise}
-              </div>
-            </div>
+              </Text>
+            </Paper>
           )}
-        </div>
+        </Box>
       )}
-    </div>
+    </Group>
   );
 }
-
-// ---------------------------------------------------------------------------
-// Main ChatThread — omits the header when showHeader=false
-// ---------------------------------------------------------------------------
 
 interface ChatThreadProps {
   messages: ChatMessage[];
@@ -140,9 +126,7 @@ interface ChatThreadProps {
   isGroup: boolean;
   premise?: string;
   showHeader?: boolean;
-  /** When false, premise is not shown in body (use header task icon instead) */
   showPremiseInBody?: boolean;
-  /** Order of senders for consistent unique colors; computed from messages if omitted */
   orderedSenders?: string[];
 }
 
@@ -159,12 +143,11 @@ export function ChatThread({
   const senderOrder = orderedSenders ?? getOrderedSenders(messages);
 
   return (
-    <div
+    <Box
       style={{
         display: "flex",
         flexDirection: "column",
         background: "#fff",
-        fontFamily: FONT,
       }}
     >
       {showHeader && (
@@ -176,11 +159,10 @@ export function ChatThread({
         />
       )}
 
-      {/* Premise in body only when showPremiseInBody (e.g. standalone ChatThread) */}
       {premise && showPremiseInBody && (
-        <div
+        <Box
+          p="md"
           style={{
-            padding: "14px 18px",
             background: "#f0f4ff",
             borderBottom: "1px solid #dde2f0",
             borderLeft: "3px solid #5b7cff",
@@ -188,95 +170,68 @@ export function ChatThread({
             borderRadius: "0 8px 8px 0",
           }}
         >
-          <div style={{ fontSize: 11, fontWeight: 700, color: "#5b7cff", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>
-            How it works
-          </div>
-          <div style={{ fontSize: 15, color: "#1c1c1e", lineHeight: 1.5, fontWeight: 500 }}>
+          <Text size="xs" fw={700} c="#5b7cff" tt="uppercase" lts="0.06em" mb="xs">
+            Objective
+          </Text>
+          <Text size="md" c="dark" lh={1.5} fw={500}>
             {premise}
-          </div>
-        </div>
+          </Text>
+        </Box>
       )}
 
-      {/* Message bubbles */}
-      <div
-        style={{
-          padding: "12px 12px 8px",
-          display: "flex",
-          flexDirection: "column",
-          gap: 2,
-          background: "#fff",
-        }}
-      >
-        {messages.map((msg) => {
-          return (
-            <div key={msg.id}>
-              {msg.show_timestamp && (
-                <div
-                  style={{
-                    textAlign: "center",
-                    fontSize: 12,
-                    color: "#8e8e93",
-                    padding: "8px 0 4px",
-                  }}
-                >
-                  {msg.timestamp}
-                </div>
-              )}
+      <Stack gap={2} p="sm" style={{ background: "#fff" }}>
+        {messages.map((msg) => (
+          <Box key={msg.id}>
+            {msg.show_timestamp && (
+              <Text size="xs" c="dimmed" ta="center" py="xs" mb={4}>
+                {msg.timestamp}
+              </Text>
+            )}
 
-              {isGroup && (
-                <div
-                  style={{
-                    fontSize: 12,
-                    fontWeight: 500,
-                    color: getSenderColor(msg.sender, senderOrder),
-                    marginLeft: 12,
-                    marginBottom: 2,
-                    marginTop: 6,
-                  }}
-                >
-                  {msg.sender}
-                </div>
-              )}
+            {isGroup && (
+              <Text
+                size="xs"
+                fw={500}
+                c={getSenderColor(msg.sender, senderOrder)}
+                ml="sm"
+                mb={2}
+                mt={6}
+              >
+                {msg.sender}
+              </Text>
+            )}
 
-              <div
-                className="animate-bubble"
+            <Box className="animate-bubble" style={{ display: "flex", justifyContent: "flex-start", marginBottom: 2 }}>
+              <Box
                 style={{
-                  display: "flex",
-                  justifyContent: "flex-start",
-                  marginBottom: 2,
+                  maxWidth: "75%",
+                  padding: msg.is_redacted ? "10px 14px" : "9px 14px",
+                  borderRadius: 18,
+                  borderBottomLeftRadius: 4,
+                  background: "#E9E9EB",
+                  color: "#000",
+                  fontSize: 16,
+                  lineHeight: 1.4,
                 }}
               >
-                <div
-                  style={{
-                    maxWidth: "75%",
-                    padding: msg.is_redacted ? "10px 14px" : "9px 14px",
-                    borderRadius: 18,
-                    borderBottomLeftRadius: 4,
-                    background: "#E9E9EB",
-                    color: "#000",
-                    fontSize: 16,
-                    lineHeight: 1.4,
-                  }}
-                >
-                  {msg.is_redacted ? (
-                    <div
-                      className="redacted-pulse"
-                      style={{
-                        width: 180,
-                        height: 20,
-                        background: "#000",
-                        borderRadius: 4,
-                      }}
-                    />
-                  ) : (
-                    msg.text
-                  )}
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
+                {msg.is_redacted ? (
+                  <Box
+                    className="redacted-pulse"
+                    style={{
+                      width: 180,
+                      height: 20,
+                      background: "#000",
+                      borderRadius: 4,
+                    }}
+                  />
+                ) : (
+                  msg.text
+                )}
+              </Box>
+            </Box>
+          </Box>
+        ))}
+      </Stack>
+    </Box>
   );
 }
