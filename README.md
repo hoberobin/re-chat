@@ -1,90 +1,60 @@
-# Re:Chat
+# re:chat
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+A daily puzzle built around a text conversation. Read a chat, pick up on the clues, and answer one question — one guess, no sign-up, new puzzle every day.
 
-A daily text mystery: read a group chat, spot the clues, and guess who did it. One puzzle per day, one guess. No sign-up.
+---
 
-## What is Re:Chat?
+## How it works
 
-Re:Chat is a **daily puzzle** built around a text conversation. You read a chat (e.g. friends planning a surprise) and answer a single “who” question—for example, *Who spoiled it?* You get one guess from three names; after you submit, you see whether you got it right and can tap **See why** to read the explanation. New puzzle every day.
+Each puzzle presents a realistic-looking chat thread and asks you a multiple-choice question about it. The question can be anything: *who started the argument*, *what was actually planned*, *why did someone go quiet* — whatever fits the conversation. You pick from three options (A, B, or C). One try. Then you see whether you got it right, the correct answer, and an explanation.
 
-The app also includes a **classic mode**: create shareable “reorder the messages” puzzles from a screenshot or by adding messages manually, then share a link for others to solve.
+Puzzles can optionally hide (redact) one or more messages as an extra layer of mystery, but it's not required — the conversation itself is always the primary clue source.
 
-## How to play (daily puzzle)
+---
 
-1. Open the app—you’ll see **today’s puzzle** in the header and a chat thread below.
-2. Read the premise (tap the **?** in the header for the full task).
-3. Scroll through the chat and use the clues to decide who fits the question.
-4. Pick **one** of the three name options (A, B, or C)—that’s your only guess.
-5. Submit to see if you were right, the correct answer, and stats. Tap **See why** to reveal the explanation.
+## Puzzle format
 
-## Routes
+Each puzzle has:
 
-| Path | Description |
-|------|-------------|
-| `/` | **Daily puzzle** — today’s text mystery (default home) |
-| `/classic` | Classic reorder-the-messages daily puzzle |
-| `/create` | Create a shareable reorder puzzle (screenshot or manual) |
-| `/practice` | Practice reorder puzzles |
-| `/p/:id` | Play a shared puzzle by slug |
-| `/embed/:id` | Embeddable player for a shared puzzle |
+| Field | Description |
+|---|---|
+| **Chat name** | The name shown in the chat header (e.g. *"Maya's Bday 🎂"*) |
+| **Title** | Internal name used in the admin list |
+| **Premise** | Setup and question shown to the player. The last sentence (the actual question) is shown bold. |
+| **Messages** | The chat thread — each has a sender, text, optional timestamp, and an optional "hide content" flag |
+| **Options** | Three answer choices (A, B, C) — can be names, phrases, anything |
+| **Correct answer** | Which option index (0–2) is correct |
+| **Explanation** | Revealed after the player submits — explains the reasoning |
 
-## Create & share (classic reorder puzzles)
-
-1. **Create** — Go to `/create` and either:
-   - **Screenshot** — Drop a chat screenshot (iMessage, WhatsApp, etc.). OCR extracts the text into messages. Edit if needed.
-   - **Add manually** — Add messages one by one with speaker and text.
-
-2. **Set order** — Confirm or reorder the messages. This is the sequence solvers must find.
-
-3. **Add hints** (optional) — Hints unlock when solvers are stuck.
-
-4. **Publish** — Click “Create & get link”. Copy the share link or embed code.
-
-- **Share link:** `https://yoursite.com/p/abc123xyz`
-- **Embed:** `<iframe src="https://yoursite.com/embed/abc123xyz" width="400" height="500" frameborder="0"></iframe>`
-
-## How to play (classic reorder mode)
-
-1. **Reorder** — Drag messages or use up/down arrows to put the conversation in chronological order.
-2. **Check answer** — Submit to see if your order is correct.
-3. **3 strikes** — Wrong guesses add strikes; at 3 you’re out. Use “Try again” to reset.
-4. **Hints** — Use the lightbulb when stuck.
+---
 
 ## Getting started
 
-### Prerequisites
-
-- Node.js 18+
-- npm
-
-### Install
+**Prerequisites:** Node.js 18+, npm
 
 ```bash
 npm install
 ```
 
-### Development
-
-**Option A – Run everything together (recommended):**
+### Run in development
 
 ```bash
 npm run dev:all
 ```
 
-This starts the API server and the Vite dev server. Open [http://localhost:5173](http://localhost:5173).
+Starts both the API server (`localhost:3001`) and the Vite frontend (`localhost:5173`) together.
 
-**Option B – Run separately:**
+Or run them separately:
 
 ```bash
-# Terminal 1 – API server
+# Terminal 1
 npm run server
 
-# Terminal 2 – Frontend
+# Terminal 2
 npm run dev
 ```
 
-### Seeding the daily puzzle
+### Seed starter puzzles
 
 With the server running:
 
@@ -92,42 +62,91 @@ With the server running:
 npm run seed
 ```
 
-This seeds the database with the built-in daily puzzles (today and tomorrow). The API serves the puzzle whose `date` matches today (or the most recent dated puzzle).
+Inserts two sample puzzles into the database — one dated today, one tomorrow. Edit `server/seed.js` to add your own puzzles, then re-run the command.
 
-### Build & production
+### Build for production
 
 ```bash
 npm run build
 NODE_ENV=production npm run server
 ```
 
-The server serves the built client and the API. Deploy to Railway, Render, Fly.io, etc. Persist the `server/data/` directory for the SQLite database.
+The server serves both the static frontend and the API. Deploy to Railway, Render, Fly.io, etc. Make sure `server/data/` is persisted across deploys — that's where the SQLite database lives.
+
+---
+
+## Creating puzzles
+
+Puzzle creation is available in **dev mode only** (not exposed in production).
+
+Enable it by setting `VITE_DEV_MODE=true` in your `.env` file:
+
+```
+VITE_DEV_MODE=true
+```
+
+This adds a **Puzzle** link to the top of the app, which opens the admin dashboard at `/puzzle`. From there you can:
+
+- **Create** a new puzzle at `/puzzle/new` — live preview updates as you type
+- **Edit** an existing puzzle at `/puzzle/:id`
+- **Delete** a puzzle from the edit screen
+
+The editor includes a side-by-side live preview of exactly how the puzzle will look to players.
+
+**The "Hide message content" toggle** on each message blacks out that message's text for players. Use it to add mystery — it's optional and not required for the puzzle to work.
+
+**Release date** controls which puzzle appears on a given day. The API serves the puzzle whose date matches today, falling back to the most recent dated puzzle if none matches.
+
+---
+
+## Routes
+
+| Path | Description |
+|---|---|
+| `/` | Daily puzzle (home) |
+| `/puzzle` | Admin puzzle list *(dev mode only)* |
+| `/puzzle/new` | Create a new puzzle *(dev mode only)* |
+| `/puzzle/:id` | Edit a puzzle *(dev mode only)* |
+
+---
 
 ## Project structure
 
 ```
 re-chat/
-├── src/                 # React app
-│   ├── api/             # API client (daily puzzle, create, get puzzle)
-│   ├── pages/           # DailyPuzzle, Landing (classic), Create, Play, Practice, PuzzleBySlug
-│   ├── utils/           # chatColors, parseChatText (OCR-friendly)
-│   └── components/      # ChatThread, AnswerOptions, ResultReveal, etc.
-├── server/              # Express + SQLite API
-│   ├── index.js         # GET /api/daily, POST /api/daily/result, puzzle CRUD, seed
-│   ├── seed.js          # Seed script for daily puzzles
-│   └── data/            # puzzles.db (gitignored)
+├── src/
+│   ├── api/
+│   │   └── puzzles.ts          # API client (fetch daily puzzle, submit answer, CRUD)
+│   ├── components/
+│   │   ├── ChatThread.tsx       # iMessage-style chat bubble renderer
+│   │   ├── AnswerOptions.tsx    # A/B/C answer buttons with reveal states
+│   │   ├── DailyPuzzleView.tsx  # Composes the full puzzle screen
+│   │   ├── ResultReveal.tsx     # Post-answer outcome, explanation, streak, countdown
+│   │   └── OnboardingOverlay.tsx # First-time "How to play" sheet
+│   ├── pages/
+│   │   ├── DailyPuzzle.tsx      # Home page — loads puzzle, manages state
+│   │   ├── DailyPuzzleForm.tsx  # Create / edit puzzle (dev mode)
+│   │   └── DailyPuzzlesList.tsx # Admin puzzle list (dev mode)
+│   ├── types/
+│   │   └── puzzle.ts            # TypeScript types (DailyPuzzle, ChatMessage, PuzzleResult, etc.)
+│   └── utils/
+│       └── chatColors.ts        # Sender color assignment logic
+├── server/
+│   ├── index.js                 # Express API (daily puzzle, answer submission, CRUD)
+│   ├── seed.js                  # Seed script — edit and run to populate puzzles
+│   └── data/
+│       └── puzzles.db           # SQLite database (gitignored)
 └── package.json
 ```
 
+---
+
 ## Tech stack
 
-- React 19, TypeScript, Vite
-- Express, sql.js (SQLite), nanoid
-- Tesseract.js for screenshot OCR (create flow)
+- **Frontend:** React 19, TypeScript, Vite, Mantine UI
+- **Backend:** Express, sql.js (SQLite), nanoid
 
-## Contributing
-
-Contributions are welcome. Open an issue or submit a pull request.
+---
 
 ## License
 
