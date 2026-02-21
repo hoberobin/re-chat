@@ -1,4 +1,4 @@
-# re:chat
+# Re:Chat
 
 A daily puzzle built around a text conversation. Read a chat, pick up on the clues, and answer one question — one guess, no sign-up, new puzzle every day.
 
