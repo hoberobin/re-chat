@@ -70,7 +70,7 @@ export function ResultReveal({
           onClick={() => setShowExplanation(true)}
           style={{ alignSelf: "center" }}
         >
-          See why →
+          Show explanation →
         </Button>
       )}
 

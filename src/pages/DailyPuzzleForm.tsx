@@ -6,6 +6,7 @@ import {
   getDailyPuzzleForEdit,
   updateDailyPuzzle,
   deleteDailyPuzzle,
+  generatePuzzle,
 } from "../api/puzzles";
 import type { DailyPuzzleCreatePayload } from "../types/puzzle";
 import type { ChatMessage } from "../types/puzzle";
@@ -93,6 +94,9 @@ export function DailyPuzzleForm() {
   const [publishSuccess, setPublishSuccess] = useState<{ id: string; date: string } | null>(null);
   const [publishing, setPublishing] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [topicForAi, setTopicForAi] = useState("");
+  const [generating, setGenerating] = useState(false);
+  const [generateError, setGenerateError] = useState<string | null>(null);
 
   useEffect(() => {
     if (isCreate) return;
@@ -303,6 +307,67 @@ export function DailyPuzzleForm() {
             Edit below; preview updates live. When ready, set the release date and save.
           </Text>
 
+          {isCreate && (
+            <Paper p={16} radius="md" withBorder style={{ borderColor: "#e5e5ea", marginBottom: 20, background: "#f9f9fb" }}>
+              <Text size="sm" fw={600} mb={8}>
+                Generate with AI
+              </Text>
+              <Text size="xs" c="dimmed" mb={10}>
+                Describe the puzzle idea; AI will fill in the fields below. You can edit before saving.
+              </Text>
+              <Textarea
+                placeholder="e.g. Three friends plan a surprise party; one of them told the birthday person. Who spoiled it?"
+                value={topicForAi}
+                onChange={(e) => {
+                  setTopicForAi(e.target.value);
+                  setGenerateError(null);
+                }}
+                rows={2}
+                radius="sm"
+                mb={10}
+                disabled={generating}
+              />
+              <Button
+                variant="light"
+                color="blue"
+                radius="md"
+                size="sm"
+                loading={generating}
+                disabled={!topicForAi.trim() || generating}
+                onClick={async () => {
+                  setGenerating(true);
+                  setGenerateError(null);
+                  try {
+                    const payload = await generatePuzzle(topicForAi);
+                    setDraft({
+                      ...payload,
+                      date: payload.date || getTodayDateString(),
+                    });
+                    setPublishErrors([]);
+                    setPublishSuccess(null);
+                  } catch (e) {
+                    setGenerateError(e instanceof Error ? e.message : "Generation failed");
+                  } finally {
+                    setGenerating(false);
+                  }
+                }}
+              >
+                {generating ? "Generating…" : "Generate with AI"}
+              </Button>
+              {generateError && (
+                <Alert color="red" variant="light" mt={10} radius="sm" size="sm">
+                  {generateError}
+                </Alert>
+              )}
+            </Paper>
+          )}
+
+          <Text size="sm" fw={600} c="dark" mb={8}>
+            Basics
+          </Text>
+          <Text size="xs" c="dimmed" mb={12}>
+            Puzzle will show on the release date.
+          </Text>
           <Stack gap={16}>
             <TextInput
               label="Title"
@@ -339,9 +404,12 @@ export function DailyPuzzleForm() {
             />
           </Stack>
 
-          <Title order={2} size="h5" fw={600} mt={24} mb={8}>
+          <Title order={2} size="h5" fw={600} mt={24} mb={4}>
             Messages
           </Title>
+          <Text size="xs" c="dimmed" mb={10}>
+            Order matters; use Up/Down to reorder.
+          </Text>
           <Stack gap={10}>
             {draft.messages.map((msg, i) => (
               <Paper key={msg.id} p={12} radius="sm" withBorder style={{ borderColor: "#e5e5ea" }}>
@@ -430,11 +498,11 @@ export function DailyPuzzleForm() {
             </Button>
           </Stack>
 
-          <Title order={2} size="h5" fw={600} mt={24} mb={8}>
+          <Title order={2} size="h5" fw={600} mt={24} mb={4}>
             Answer options
           </Title>
           <Text size="xs" c="dimmed" mb={8}>
-            The three names players choose from. One must be correct.
+            Exactly one must be correct. The three choices players see (A, B, C).
           </Text>
           <Radio.Group
             value={String(draft.correct_option_index)}
@@ -461,15 +529,19 @@ export function DailyPuzzleForm() {
             </Stack>
           </Radio.Group>
 
+          <Text size="sm" fw={600} c="dark" mt={20} mb={4}>
+            Explanation
+          </Text>
+          <Text size="xs" c="dimmed" mb={8}>
+            Shown after the player submits their answer.
+          </Text>
           <Textarea
-            label="Explanation (shown after submit)"
             placeholder="Why this answer is correct..."
             value={draft.explanation}
             onChange={(e) => update("explanation", e.target.value)}
             rows={4}
             radius="sm"
-            mt={20}
-            styles={{ label: { fontSize: 13, fontWeight: 600 }, input: { resize: "vertical" } }}
+            styles={{ input: { resize: "vertical" } }}
           />
 
           {publishErrors.length > 0 && (

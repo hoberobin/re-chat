@@ -100,8 +100,18 @@ export function OnboardingOverlay({ onDismiss }: OnboardingOverlayProps) {
             onClick={onDismiss}
             style={{ marginTop: 4 }}
           >
-            Let's go
+            Let&apos;s go
           </Button>
+          <Text
+            component="button"
+            type="button"
+            size="xs"
+            c="dimmed"
+            style={{ background: "none", border: "none", cursor: "pointer", padding: 8 }}
+            onClick={onDismiss}
+          >
+            Skip
+          </Text>
         </Stack>
       </Box>
     </>

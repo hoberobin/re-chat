@@ -130,3 +130,21 @@ export async function deleteDailyPuzzle(id: string): Promise<void> {
     throw new Error(err?.error ?? `Failed to delete puzzle (${res.status})`);
   }
 }
+
+// ---------------------------------------------------------------------------
+// AI puzzle generation (dev or admin-secret)
+// ---------------------------------------------------------------------------
+
+/** Generates a puzzle from a topic using OpenAI. Returns payload without id (client merges into draft). */
+export async function generatePuzzle(topic: string): Promise<Omit<DailyPuzzleCreatePayload, "id">> {
+  const res = await fetch(`${API_BASE}/api/generate-puzzle`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ topic: topic.trim() }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err?.error ?? `Generation failed (${res.status})`);
+  }
+  return res.json();
+}

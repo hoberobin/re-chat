@@ -12,6 +12,10 @@ dist
 dist-ssr
 *.local
 
+# Environment (secrets; use .env.example as template)
+.env
+.env.local
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -23,6 +27,7 @@ dist-ssr
 *.sln
 *.sw?
 
-# Server data (allow puzzles.json to be committed)
+# Server data (SQLite DB and legacy files; run "npm run seed" to create puzzles.db)
 server/data/*.db
 server/data/results.json
+server/data/puzzles.json

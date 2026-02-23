@@ -1,7 +1,7 @@
 [
   {
     "id": "the-lunch-order",
-    "date": "2026-02-23",
+    "date": "2026-02-25",
     "title": "The Lunch Order",
     "premise": "Three coworkers are deciding where to order lunch. One of them already ordered from somewhere else and didn't tell the group. Who already ordered?",
     "chat_name": "Lunch Bunch",
@@ -216,5 +216,78 @@
     ],
     "correct_option_index": 1,
     "explanation": "Priya knew Maya was avoiding dairy 'from a text last week' — specific knowledge with no obvious source. Jordan's reaction 'wait how do you know that' confirms the suspicion. Tom's confusion throughout is genuine. Priya's alibi is thin."
+  },
+  {
+    "id": "GHyMuR_XhJ",
+    "date": "2026-02-23",
+    "title": "Venice Murder",
+    "premise": "After a day visiting Venice you come across a dead body. One of your friends kill them. Who was it?",
+    "chat_name": "Haunting in Venice",
+    "is_group": true,
+    "messages": [
+      {
+        "id": 1,
+        "sender": "Andrew",
+        "text": "I got up early and headed out for a pastry",
+        "is_redacted": false,
+        "timestamp": "12:00 PM",
+        "show_timestamp": true
+      },
+      {
+        "id": 2,
+        "sender": "Andrew",
+        "text": "I'll catch ya'll later",
+        "is_redacted": false,
+        "timestamp": "12:00 PM",
+        "show_timestamp": false
+      },
+      {
+        "id": 3,
+        "sender": "Michelle",
+        "text": "Dang, I would have joined you - late night",
+        "is_redacted": false,
+        "timestamp": "12:00 PM",
+        "show_timestamp": false
+      },
+      {
+        "id": 4,
+        "sender": "Carlos",
+        "text": "Michelle, I thought I saw you come back to the Airbnb?",
+        "is_redacted": false,
+        "timestamp": "2:00 PM",
+        "show_timestamp": true
+      },
+      {
+        "id": 5,
+        "sender": "Michelle",
+        "text": "I came back but only for a second",
+        "is_redacted": false,
+        "timestamp": "12:00 PM",
+        "show_timestamp": false
+      },
+      {
+        "id": 6,
+        "sender": "Carlos",
+        "text": "But who?",
+        "is_redacted": false,
+        "timestamp": "12:00 PM",
+        "show_timestamp": false
+      },
+      {
+        "id": 7,
+        "sender": "Andrew",
+        "text": "This pastry is lit",
+        "is_redacted": false,
+        "timestamp": "12:00 PM",
+        "show_timestamp": false
+      }
+    ],
+    "options": [
+      "Carlos",
+      "Michelle",
+      "Andrew"
+    ],
+    "correct_option_index": 2,
+    "explanation": "He said the pastry was lit."
   }
 ]

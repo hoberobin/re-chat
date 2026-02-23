@@ -82,9 +82,34 @@ export function DailyPuzzlesList() {
         )}
 
         {loading ? (
-          <Text size="sm" c="dimmed">
-            Loading…
-          </Text>
+          <Paper radius="lg" shadow="sm" style={{ overflow: "hidden" }}>
+            <Table>
+              <Table.Thead>
+                <Table.Tr style={{ background: "#f9f9f9", borderBottom: "1px solid #e5e5ea" }}>
+                  <Table.Th style={{ padding: "12px 16px", fontSize: 12, fontWeight: 600, color: "#6b6b70" }}>Date</Table.Th>
+                  <Table.Th style={{ padding: "12px 16px", fontSize: 12, fontWeight: 600, color: "#6b6b70" }}>Title</Table.Th>
+                  <Table.Th style={{ padding: "12px 16px", fontSize: 12, fontWeight: 600, color: "#6b6b70" }}>ID</Table.Th>
+                  <Table.Th ta="right" style={{ padding: "12px 16px", fontSize: 12, fontWeight: 600, color: "#6b6b70" }}>Actions</Table.Th>
+                </Table.Tr>
+              </Table.Thead>
+              <Table.Tbody>
+                {[1, 2, 3, 4].map((i) => (
+                  <Table.Tr key={i} style={{ borderBottom: "1px solid #f0f0f0" }}>
+                    <Table.Td style={{ padding: "12px 16px" }}>
+                      <Box style={{ width: 90, height: 14, background: "#e5e5ea", borderRadius: 4 }} />
+                    </Table.Td>
+                    <Table.Td style={{ padding: "12px 16px" }}>
+                      <Box style={{ width: 120, height: 14, background: "#e5e5ea", borderRadius: 4 }} />
+                    </Table.Td>
+                    <Table.Td style={{ padding: "12px 16px" }}>
+                      <Box style={{ width: 80, height: 14, background: "#e5e5ea", borderRadius: 4 }} />
+                    </Table.Td>
+                    <Table.Td style={{ padding: "12px 16px" }} />
+                  </Table.Tr>
+                ))}
+              </Table.Tbody>
+            </Table>
+          </Paper>
         ) : items.length === 0 ? (
           <Paper
             p={48}
@@ -94,10 +119,10 @@ export function DailyPuzzlesList() {
             style={{ borderStyle: "dashed", borderColor: "#d1d1d6" }}
           >
             <Text size="sm" c="dimmed" mb={16}>
-              No puzzles yet.
+              No puzzles yet. Create your first one or generate one with AI from the form.
             </Text>
             <Button component={Link} to="/puzzle/new" variant="filled" radius="md" fw={600}>
-              Create your first puzzle
+              Create puzzle
             </Button>
           </Paper>
         ) : (

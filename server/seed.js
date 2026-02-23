@@ -1,14 +1,21 @@
-// server/seed.js — write starter puzzles to server/data/puzzles.json
+// server/seed.js — seed the SQLite database with starter puzzles
 //
 // Run from repo root: npm run seed
-// No server required. Next time the server starts (or is already running),
-// it will load puzzles from puzzles.json.
+// No server required. Creates or overwrites server/data/puzzles.db.
 
-import { writeFileSync, mkdirSync, existsSync } from "fs";
+import initSqlJs from "sql.js";
+import { readFileSync, writeFileSync, mkdirSync, existsSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
+
+const dataDir = join(__dirname, "data");
+const dbPath = join(dataDir, "puzzles.db");
+
+if (!existsSync(dataDir)) {
+  mkdirSync(dataDir, { recursive: true });
+}
 
 function getDateString(offsetDays = 0) {
   const d = new Date();
@@ -75,14 +82,47 @@ const puzzles = [
   },
 ];
 
-const dataDir = join(__dirname, "data");
-if (!existsSync(dataDir)) {
-  mkdirSync(dataDir, { recursive: true });
+async function seed() {
+  const SQL = await initSqlJs();
+  const db = existsSync(dbPath)
+    ? new SQL.Database(readFileSync(dbPath))
+    : new SQL.Database();
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS puzzles (
+      id TEXT PRIMARY KEY,
+      data TEXT NOT NULL,
+      created_at INTEGER DEFAULT (strftime('%s', 'now'))
+    )
+  `);
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS results (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      puzzle_date TEXT NOT NULL,
+      session_id TEXT NOT NULL,
+      guessed_index INTEGER NOT NULL,
+      correct INTEGER NOT NULL,
+      played_at INTEGER DEFAULT (strftime('%s', 'now'))
+    )
+  `);
+
+  for (const puzzle of puzzles) {
+    db.run("INSERT OR REPLACE INTO puzzles (id, data) VALUES (?, ?)", [
+      puzzle.id,
+      JSON.stringify(puzzle),
+    ]);
+  }
+
+  const data = db.export();
+  writeFileSync(dbPath, Buffer.from(data));
+
+  console.log(`✓ Seeded ${puzzles.length} puzzle(s) to ${dbPath}`);
+  console.log(`  Today: ${today} — "${puzzles[1].title}"`);
+  console.log(`  Tomorrow: ${tomorrow} — "${puzzles[0].title}"`);
 }
 
-const puzzlesPath = join(dataDir, "puzzles.json");
-writeFileSync(puzzlesPath, JSON.stringify(puzzles, null, 2), "utf8");
-
-console.log(`✓ Wrote ${puzzles.length} puzzle(s) to ${puzzlesPath}`);
-console.log(`  Today: ${today} — "${puzzles[1].title}"`);
-console.log(`  Tomorrow: ${tomorrow} — "${puzzles[0].title}"`);
+seed().catch((err) => {
+  console.error("Seed failed:", err);
+  process.exit(1);
+});

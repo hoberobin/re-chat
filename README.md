@@ -32,9 +32,15 @@ Each puzzle has:
 
 **Prerequisites:** Node.js 18+, npm
 
+**First-time setup** (from the repo root):
+
 ```bash
 npm install
+npm run seed
+npm run dev:all
 ```
+
+Copy `.env.example` to `.env` and adjust if needed (optional for local dev).
 
 ### Run in development
 
@@ -42,7 +48,7 @@ npm install
 npm run dev:all
 ```
 
-Starts both the API server (`localhost:3001`) and the Vite frontend (`localhost:5173`) together.
+Starts both the API server (`localhost:3001`) and the Vite frontend (`localhost:5173`). **Use this so the game can load the daily puzzle** — the frontend needs the API; if you only run `npm run dev`, you’ll get 404 on `/api/daily`.
 
 Or run them separately:
 
@@ -54,6 +60,8 @@ npm run server
 npm run dev
 ```
 
+**If you see 404 on `/api/daily`:** the backend isn’t running. Start it with `npm run server` (or use `npm run dev:all`).
+
 ### Seed starter puzzles
 
 No server required. From the repo root:
@@ -62,7 +70,7 @@ No server required. From the repo root:
 npm run seed
 ```
 
-Writes two sample puzzles to `server/data/puzzles.json` — one dated today, one tomorrow. Edit `server/seed.js` to add your own puzzles, then re-run. The server loads puzzles from this file on each request.
+Creates or overwrites `server/data/puzzles.db` with two sample puzzles — one dated today, one tomorrow. Edit `server/seed.js` to add your own puzzles, then re-run. The server loads puzzles from this SQLite database.
 
 ### Build for production
 
@@ -71,7 +79,21 @@ npm run build
 NODE_ENV=production npm run server
 ```
 
-The server serves both the static frontend and the API. Deploy to Railway, Render, Fly.io, etc. Puzzles live in `server/data/puzzles.json` (committed); play stats are stored in `server/data/results.json` (gitignored). No database to provision or migrate.
+Then open **http://localhost:3001** — the server serves both the static frontend and the API from the same origin.
+
+To preview the built app locally, run **`npm run preview:all`** (server + Vite preview); open the preview URL and ensure the server is running so `/api` is proxied.
+
+---
+
+## Deploy
+
+1. **Build:** `npm run build`
+2. **Run the Node server** with `NODE_ENV=production` and `PORT` set (e.g. `PORT=3001`).
+3. **Persist `server/data/`** so `puzzles.db` is kept across restarts (Railway, Render, Fly.io, etc. support persistent disks or volumes).
+4. **Optional:** Set `ADMIN_SECRET` in the server environment to enable production puzzle CRUD via `Authorization: Bearer <ADMIN_SECRET>` or `X-Admin-Secret`.
+5. Point your host at the **Node process** (not only the static build). Platforms like Railway, Render, and Fly.io can run the Node server and serve the app.
+
+**Health check:** `GET /api/health` returns `{ "status": "ok", "db": "ok" }` when the server and database are ready.
 
 ---
 
@@ -86,6 +108,7 @@ Puzzle creation is available in **dev mode** (with `VITE_DEV_MODE=true`) or in *
 From the admin dashboard you can:
 
 - **Create** a new puzzle at `/puzzle/new` — live preview updates as you type
+- **Generate with AI**: On the create form, enter a topic (e.g. "friends planning a surprise party, one spoiled it") and click **Generate with AI** to fill the puzzle fields via OpenAI. Set `OPENAI_API_KEY` (and optionally `OPENAI_MODEL`, default `gpt-4o-mini`) in your environment. You can edit the result before saving.
 - **Edit** an existing puzzle at `/puzzle/:id`
 - **Delete** a puzzle from the edit screen
 
@@ -131,10 +154,9 @@ re-chat/
 │       └── chatColors.ts        # Sender color assignment logic
 ├── server/
 │   ├── index.js                 # Express API (daily puzzle, answer submission, CRUD)
-│   ├── seed.js                  # Seed script — writes puzzles.json (no server required)
+│   ├── seed.js                  # Seed script — writes puzzles.db (no server required)
 │   └── data/
-│       ├── puzzles.json         # Puzzle roster (committed)
-│       └── results.json         # Play stats (gitignored)
+│       └── puzzles.db           # SQLite database (gitignored)
 └── package.json
 ```
 
@@ -143,7 +165,7 @@ re-chat/
 ## Tech stack
 
 - **Frontend:** React 19, TypeScript, Vite, Mantine UI
-- **Backend:** Express, file-based JSON storage (puzzles.json, results.json), nanoid
+- **Backend:** Express, SQLite (sql.js), nanoid
 
 ---
 

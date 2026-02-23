@@ -282,7 +282,14 @@ export function DailyPuzzle() {
                 flexDirection: "column",
               }}
             >
-              {loading && <SkeletonMessages />}
+              {loading && (
+                <>
+                  <p style={{ padding: "12px 16px", margin: 0, fontSize: 14, color: "#8e8e93" }}>
+                    Loading today&apos;s puzzle…
+                  </p>
+                  <SkeletonMessages />
+                </>
+              )}
               {!loading && error && (
                 <div
                   style={{
@@ -298,10 +305,10 @@ export function DailyPuzzle() {
                   }}
                 >
                   <p style={{ color: "#FF3B30", fontSize: 16 }}>
-                    Unable to load today's puzzle.
+                    Unable to load today&apos;s puzzle.
                   </p>
                   <p style={{ color: "#8e8e93", fontSize: 14 }}>
-                    Check your connection and try again.
+                    Make sure you&apos;re online and try again.
                   </p>
                   <button
                     onClick={() => window.location.reload()}
