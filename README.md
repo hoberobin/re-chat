@@ -40,7 +40,7 @@ npm run seed
 npm run dev:all
 ```
 
-Copy `.env.example` to `.env` and adjust if needed (optional for local dev).
+Copy `.env.example` to `.env` and adjust if needed. The server loads `.env` on startup (via `dotenv`), so put `OPENAI_API_KEY` and other server vars there if you use the AI generator.
 
 ### Run in development
 
@@ -91,7 +91,8 @@ To preview the built app locally, run **`npm run preview:all`** (server + Vite p
 2. **Run the Node server** with `NODE_ENV=production` and `PORT` set (e.g. `PORT=3001`).
 3. **Persist `server/data/`** so `puzzles.db` is kept across restarts (Railway, Render, Fly.io, etc. support persistent disks or volumes).
 4. **Optional:** Set `ADMIN_SECRET` in the server environment to enable production puzzle CRUD via `Authorization: Bearer <ADMIN_SECRET>` or `X-Admin-Secret`.
-5. Point your host at the **Node process** (not only the static build). Platforms like Railway, Render, and Fly.io can run the Node server and serve the app.
+5. **Optional:** Set `OPENAI_API_KEY` (and optionally `OPENAI_MODEL`) if you want the **Generate with AI** feature in production. The server loads env from the process environment (e.g. set in your host’s config; or use a `.env` file and ensure the process is started in that directory so `dotenv` can load it).
+6. Point your host at the **Node process** (not only the static build). Platforms like Railway, Render, and Fly.io can run the Node server and serve the app.
 
 **Health check:** `GET /api/health` returns `{ "status": "ok", "db": "ok" }` when the server and database are ready.
 
@@ -108,11 +109,36 @@ Puzzle creation is available in **dev mode** (with `VITE_DEV_MODE=true`) or in *
 From the admin dashboard you can:
 
 - **Create** a new puzzle at `/puzzle/new` — live preview updates as you type
-- **Generate with AI**: On the create form, enter a topic (e.g. "friends planning a surprise party, one spoiled it") and click **Generate with AI** to fill the puzzle fields via OpenAI. Set `OPENAI_API_KEY` (and optionally `OPENAI_MODEL`, default `gpt-4o-mini`) in your environment. You can edit the result before saving.
+- **Generate with AI** — see the [AI puzzle generator](#ai-puzzle-generator) section below
 - **Edit** an existing puzzle at `/puzzle/:id`
 - **Delete** a puzzle from the edit screen
 
 The editor includes a side-by-side live preview of exactly how the puzzle will look to players.
+
+---
+
+## AI puzzle generator
+
+On the **create** form (`/puzzle/new`), you can use the **Generate with AI** block to draft a full puzzle from a short description. The server calls the OpenAI API (Chat Completions), so your API key never leaves the server.
+
+**How to use:**
+
+1. Set `OPENAI_API_KEY` in your environment (e.g. in a `.env` file in the project root). The server loads `.env` via `dotenv` on startup.
+2. Optionally set `OPENAI_MODEL` (default is `gpt-4o-mini`; use `gpt-4o` for higher quality and higher cost).
+3. On the create form, enter a topic in the text area — e.g. *"Three friends plan a surprise party; one of them told the birthday person. Who spoiled it?"*
+4. Click **Generate with AI**. The server sends the topic to OpenAI, gets back a structured puzzle (title, premise, chat name, messages, options, correct answer, explanation), validates it, and returns it to the form.
+5. The form fills in all fields. You can edit anything before clicking **Publish to database**.
+
+**Details:**
+
+- The **API key is only on the server**. The frontend never sees it. The server exposes `POST /api/generate-puzzle` (same auth as other admin routes: dev mode or `ADMIN_SECRET` in production).
+- The model is instructed to return a single JSON object matching the puzzle schema (date, title, premise, messages, options, correct_option_index, explanation). The server parses the response, strips markdown code fences if present, and runs it through the same validation used for manual create. If validation fails, you get an error and can tweak the topic or try again.
+- **Cost:** Each generation uses one Chat Completions request. Usage is billed by OpenAI; the app does not impose a rate limit by default.
+
+**Troubleshooting:**
+
+- *"OpenAI API key not configured"* — Add `OPENAI_API_KEY` to `.env` in the project root and restart the server. The server loads `.env` on startup.
+- *"AI returned invalid JSON"* — The model sometimes wraps JSON in markdown or adds text. The server strips common patterns; if it still fails, try a simpler or more specific topic.
 
 **The "Hide message content" toggle** on each message blacks out that message's text for players. Use it to add mystery — it's optional and not required for the puzzle to work.
 
@@ -153,7 +179,7 @@ re-chat/
 │   └── utils/
 │       └── chatColors.ts        # Sender color assignment logic
 ├── server/
-│   ├── index.js                 # Express API (daily puzzle, answer submission, CRUD)
+│   ├── index.js                 # Express API (daily puzzle, answer submission, CRUD, POST /api/generate-puzzle)
 │   ├── seed.js                  # Seed script — writes puzzles.db (no server required)
 │   └── data/
 │       └── puzzles.db           # SQLite database (gitignored)
@@ -165,7 +191,7 @@ re-chat/
 ## Tech stack
 
 - **Frontend:** React 19, TypeScript, Vite, Mantine UI
-- **Backend:** Express, SQLite (sql.js), nanoid
+- **Backend:** Express, SQLite (sql.js), nanoid, dotenv (loads `.env`). Optional: OpenAI (for **Generate with AI** on the create form).
 
 ---
 
