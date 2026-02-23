@@ -1,6 +1,5 @@
 import express from "express";
 import cors from "cors";
-import initSqlJs from "sql.js";
 import { nanoid } from "nanoid";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
@@ -13,159 +12,77 @@ app.use(cors());
 app.use(express.json({ limit: "1mb" }));
 
 const dataDir = join(__dirname, "data");
-const dbPath = join(dataDir, "puzzles.db");
+const puzzlesPath = join(dataDir, "puzzles.json");
+const resultsPath = join(dataDir, "results.json");
 
 if (!existsSync(dataDir)) {
   mkdirSync(dataDir, { recursive: true });
 }
 
-let db;
-
-async function initDb() {
-  const SQL = await initSqlJs();
-  if (existsSync(dbPath)) {
-    const buffer = readFileSync(dbPath);
-    db = new SQL.Database(buffer);
-  } else {
-    db = new SQL.Database();
-  }
-
-  // Puzzles table — stores JSON blob per puzzle (new format includes date, title, premise, etc.)
-  db.run(`
-    CREATE TABLE IF NOT EXISTS puzzles (
-      id TEXT PRIMARY KEY,
-      data TEXT NOT NULL,
-      created_at INTEGER DEFAULT (strftime('%s', 'now'))
-    )
-  `);
-
-  // Results table — tracks anonymous plays
-  db.run(`
-    CREATE TABLE IF NOT EXISTS results (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      puzzle_date TEXT NOT NULL,
-      session_id TEXT NOT NULL,
-      guessed_index INTEGER NOT NULL,
-      correct INTEGER NOT NULL,
-      played_at INTEGER DEFAULT (strftime('%s', 'now'))
-    )
-  `);
-
-  if (!existsSync(dbPath)) saveDb();
+// Ensure puzzles.json exists on startup
+if (!existsSync(puzzlesPath)) {
+  writeFileSync(puzzlesPath, "[]", "utf8");
 }
 
-function saveDb() {
-  if (db) {
-    const data = db.export();
-    const buffer = Buffer.from(data);
-    writeFileSync(dbPath, buffer);
+function loadPuzzles() {
+  try {
+    const raw = readFileSync(puzzlesPath, "utf8");
+    const data = JSON.parse(raw);
+    return Array.isArray(data) ? data : [];
+  } catch {
+    return [];
   }
 }
 
-await initDb();
+function savePuzzles(puzzles) {
+  writeFileSync(puzzlesPath, JSON.stringify(puzzles, null, 2), "utf8");
+}
 
-// POST /api/puzzles — create puzzle (legacy, keep as-is)
-app.post("/api/puzzles", (req, res) => {
+function loadResults() {
   try {
-    const { messages, correctOrder, constraints } = req.body;
-    if (
-      !Array.isArray(messages) ||
-      !Array.isArray(correctOrder) ||
-      !Array.isArray(constraints)
-    ) {
-      return res.status(400).json({
-        error: "Missing or invalid fields: messages, correctOrder, constraints",
-      });
-    }
-    if (messages.length < 2 || messages.length > 30) {
-      return res.status(400).json({
-        error: "Puzzle must have between 2 and 30 messages",
-      });
-    }
-    const id = nanoid(10);
-    const data = JSON.stringify({ messages, correctOrder, constraints });
-    db.run("INSERT INTO puzzles (id, data) VALUES (?, ?)", [id, data]);
-    saveDb();
-    res.status(201).json({ id });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Failed to create puzzle" });
+    const raw = readFileSync(resultsPath, "utf8");
+    const data = JSON.parse(raw);
+    return Array.isArray(data) ? data : [];
+  } catch {
+    return [];
   }
-});
+}
 
-// GET /api/puzzles/:id — fetch puzzle by ID (legacy, keep as-is)
-app.get("/api/puzzles/:id", (req, res) => {
-  try {
-    const { id } = req.params;
-    const stmt = db.prepare("SELECT data FROM puzzles WHERE id = ?");
-    stmt.bind([id]);
-    if (stmt.step()) {
-      const row = stmt.getAsObject();
-      const puzzle = JSON.parse(row.data);
-      stmt.free();
-      return res.json({ id, ...puzzle });
-    }
-    stmt.free();
-    res.status(404).json({ error: "Puzzle not found" });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Failed to fetch puzzle" });
-  }
-});
+function saveResults(results) {
+  writeFileSync(resultsPath, JSON.stringify(results, null, 2), "utf8");
+}
+
+function getStatsForDate(puzzleDate) {
+  const results = loadResults();
+  const forDate = results.filter((r) => r.puzzle_date === puzzleDate);
+  const total_plays = forDate.length;
+  const correct_plays = forDate.filter((r) => r.correct === 1).length;
+  return { total_plays, correct_plays };
+}
 
 // GET /api/daily — today's mystery puzzle
 app.get("/api/daily", (req, res) => {
   try {
     const today = new Date().toISOString().slice(0, 10);
+    const puzzles = loadPuzzles().filter((p) => p.date != null);
 
-    // Try to find puzzle for today (ORDER BY id so result is deterministic if multiple match)
-    let stmt = db.prepare(
-      "SELECT id, data FROM puzzles WHERE json_extract(data, '$.date') = ? ORDER BY id ASC LIMIT 1"
-    );
-    stmt.bind([today]);
-    let puzzleRow = null;
-    if (stmt.step()) {
-      puzzleRow = stmt.getAsObject();
-    }
-    stmt.free();
-
-    // Fallback: most recent puzzle by date
-    if (!puzzleRow) {
-      stmt = db.prepare(
-        "SELECT id, data FROM puzzles WHERE json_extract(data, '$.date') IS NOT NULL ORDER BY json_extract(data, '$.date') DESC LIMIT 1"
-      );
-      if (stmt.step()) {
-        puzzleRow = stmt.getAsObject();
-      }
-      stmt.free();
+    // Try puzzle for today (deterministic: first by id if multiple)
+    let puzzle = puzzles.find((p) => p.date === today);
+    if (!puzzle) {
+      // Fallback: most recent by date
+      puzzles.sort((a, b) => (b.date < a.date ? -1 : 1));
+      puzzle = puzzles[0];
     }
 
-    if (!puzzleRow) {
+    if (!puzzle) {
       return res.status(503).json({ error: "No daily puzzles available" });
     }
 
-    const puzzle = JSON.parse(puzzleRow.data);
     const puzzleDate = puzzle.date;
+    const stats = getStatsForDate(puzzleDate);
 
-    // Get stats
-    const statsStmt = db.prepare(
-      "SELECT COUNT(*) as total_plays, SUM(correct) as correct_plays FROM results WHERE puzzle_date = ?"
-    );
-    statsStmt.bind([puzzleDate]);
-    let stats = { total_plays: 0, correct_plays: 0 };
-    if (statsStmt.step()) {
-      const row = statsStmt.getAsObject();
-      stats = {
-        total_plays: Number(row.total_plays) || 0,
-        correct_plays: Number(row.correct_plays) || 0,
-      };
-    }
-    statsStmt.free();
-
-    // Strip sensitive fields before responding
     const { correct_option_index: _coi, explanation: _exp, ...safePuzzle } = puzzle;
-
-    res.json({ ...safePuzzle, id: puzzleRow.id, stats });
+    res.json({ ...safePuzzle, id: puzzle.id, stats });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to get daily puzzle" });
@@ -187,41 +104,24 @@ app.post("/api/daily/result", (req, res) => {
         .json({ error: "Missing puzzle_date, guessed_index, or session_id" });
     }
 
-    // Find the puzzle for this date
-    const stmt = db.prepare(
-      "SELECT id, data FROM puzzles WHERE json_extract(data, '$.date') = ? LIMIT 1"
-    );
-    stmt.bind([puzzle_date]);
-    if (!stmt.step()) {
-      stmt.free();
+    const puzzles = loadPuzzles();
+    const puzzle = puzzles.find((p) => p.date === puzzle_date);
+    if (!puzzle) {
       return res.status(404).json({ error: "Puzzle not found for this date" });
     }
-    const puzzleRow = stmt.getAsObject();
-    stmt.free();
 
-    const puzzle = JSON.parse(puzzleRow.data);
     const correct = guessed_index === puzzle.correct_option_index ? 1 : 0;
+    const results = loadResults();
+    results.push({
+      puzzle_date,
+      session_id,
+      guessed_index,
+      correct,
+      played_at: Math.floor(Date.now() / 1000),
+    });
+    saveResults(results);
 
-    db.run(
-      "INSERT INTO results (puzzle_date, session_id, guessed_index, correct) VALUES (?, ?, ?, ?)",
-      [puzzle_date, session_id, guessed_index, correct]
-    );
-    saveDb();
-
-    // Return updated stats
-    const statsStmt = db.prepare(
-      "SELECT COUNT(*) as total_plays, SUM(correct) as correct_plays FROM results WHERE puzzle_date = ?"
-    );
-    statsStmt.bind([puzzle_date]);
-    let stats = { total_plays: 0, correct_plays: 0 };
-    if (statsStmt.step()) {
-      const row = statsStmt.getAsObject();
-      stats = {
-        total_plays: Number(row.total_plays) || 0,
-        correct_plays: Number(row.correct_plays) || 0,
-      };
-    }
-    statsStmt.free();
+    const stats = getStatsForDate(puzzle_date);
 
     res.json({
       correct: correct === 1,
@@ -245,21 +145,18 @@ app.get("/api/daily/result/:date", (req, res) => {
       return res.json({ played: false, guessed_index: null, correct: null });
     }
 
-    const stmt = db.prepare(
-      "SELECT guessed_index, correct FROM results WHERE puzzle_date = ? AND session_id = ? ORDER BY played_at DESC LIMIT 1"
-    );
-    stmt.bind([date, session_id]);
+    const results = loadResults();
+    const played = results
+      .filter((r) => r.puzzle_date === date && r.session_id === session_id)
+      .sort((a, b) => (b.played_at || 0) - (a.played_at || 0))[0];
 
-    if (stmt.step()) {
-      const row = stmt.getAsObject();
-      stmt.free();
+    if (played) {
       return res.json({
         played: true,
-        guessed_index: Number(row.guessed_index),
-        correct: Number(row.correct) === 1,
+        guessed_index: played.guessed_index,
+        correct: played.correct === 1,
       });
     }
-    stmt.free();
     res.json({ played: false, guessed_index: null, correct: null });
   } catch (err) {
     console.error(err);
@@ -267,69 +164,70 @@ app.get("/api/daily/result/:date", (req, res) => {
   }
 });
 
-// POST /api/daily/puzzles — create one daily puzzle (dev only)
+function guardDevOnly(req, res, next) {
+  if (process.env.NODE_ENV !== "production") {
+    return next();
+  }
+  const secret = process.env.ADMIN_SECRET;
+  if (!secret) {
+    return res.status(403).json({ error: "Not allowed in production" });
+  }
+  const auth = req.headers.authorization;
+  const headerSecret = req.headers["x-admin-secret"];
+  const bearer = auth && auth.startsWith("Bearer ") ? auth.slice(7) : null;
+  if (bearer !== secret && headerSecret !== secret) {
+    return res.status(403).json({ error: "Admin authentication required" });
+  }
+  next();
+}
+
+// POST /api/daily/puzzles — create one daily puzzle (dev or admin-secret)
 app.post("/api/daily/puzzles", guardDevOnly, (req, res) => {
   try {
     const result = validateAndNormalizeDailyPuzzle(req.body, null);
     if (result.error) {
       return res.status(400).json({ error: result.error });
     }
-    db.run("INSERT OR REPLACE INTO puzzles (id, data) VALUES (?, ?)", [
-      result.payload.id,
-      JSON.stringify(result.payload),
-    ]);
-    saveDb();
-    res.status(201).json({ id: result.payload.id, date: result.payload.date });
+    const payload = result.payload;
+    const puzzles = loadPuzzles();
+    const idx = puzzles.findIndex((p) => p.id === payload.id);
+    if (idx >= 0) {
+      puzzles[idx] = payload;
+    } else {
+      puzzles.push(payload);
+    }
+    savePuzzles(puzzles);
+    res.status(201).json({ id: payload.id, date: payload.date });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to create puzzle" });
   }
 });
 
-function guardDevOnly(req, res, next) {
-  if (process.env.NODE_ENV === "production") {
-    return res.status(403).json({ error: "Not allowed in production" });
-  }
-  next();
-}
-
-// GET /api/daily/puzzles — list all daily puzzles (dev only)
+// GET /api/daily/puzzles — list all daily puzzles (dev or admin-secret)
 app.get("/api/daily/puzzles", guardDevOnly, (req, res) => {
   try {
-    const stmt = db.prepare(
-      "SELECT id, data FROM puzzles WHERE json_extract(data, '$.date') IS NOT NULL ORDER BY json_extract(data, '$.date') DESC"
-    );
-    const rows = [];
-    while (stmt.step()) {
-      const row = stmt.getAsObject();
-      const data = JSON.parse(row.data);
-      rows.push({ id: row.id, date: data.date, title: data.title || "Untitled" });
-    }
-    stmt.free();
-    res.json(rows);
+    const puzzles = loadPuzzles()
+      .filter((p) => p.date != null)
+      .sort((a, b) => (b.date < a.date ? -1 : 1))
+      .map((p) => ({ id: p.id, date: p.date, title: p.title || "Untitled" }));
+    res.json(puzzles);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to list puzzles" });
   }
 });
 
-// GET /api/daily/puzzles/:id — get one daily puzzle for editing (dev only)
+// GET /api/daily/puzzles/:id — get one daily puzzle for editing (dev or admin-secret)
 app.get("/api/daily/puzzles/:id", guardDevOnly, (req, res) => {
   try {
     const { id } = req.params;
-    const stmt = db.prepare("SELECT id, data FROM puzzles WHERE id = ?");
-    stmt.bind([id]);
-    if (!stmt.step()) {
-      stmt.free();
+    const puzzles = loadPuzzles();
+    const puzzle = puzzles.find((p) => p.id === id);
+    if (!puzzle || puzzle.date == null) {
       return res.status(404).json({ error: "Puzzle not found" });
     }
-    const row = stmt.getAsObject();
-    stmt.free();
-    const data = JSON.parse(row.data);
-    if (data.date == null) {
-      return res.status(404).json({ error: "Not a daily puzzle" });
-    }
-    res.json({ id: row.id, ...data });
+    res.json({ id: puzzle.id, ...puzzle });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to fetch puzzle" });
@@ -408,7 +306,7 @@ function validateAndNormalizeDailyPuzzle(puzzle, idFromUrl) {
   };
 }
 
-// PUT /api/daily/puzzles/:id — update daily puzzle (dev only)
+// PUT /api/daily/puzzles/:id — update daily puzzle (dev or admin-secret)
 app.put("/api/daily/puzzles/:id", guardDevOnly, (req, res) => {
   try {
     const { id } = req.params;
@@ -416,56 +314,35 @@ app.put("/api/daily/puzzles/:id", guardDevOnly, (req, res) => {
     if (result.error) {
       return res.status(400).json({ error: result.error });
     }
-    db.run("INSERT OR REPLACE INTO puzzles (id, data) VALUES (?, ?)", [
-      result.payload.id,
-      JSON.stringify(result.payload),
-    ]);
-    saveDb();
-    res.json({ id: result.payload.id, date: result.payload.date });
+    const payload = result.payload;
+    const puzzles = loadPuzzles();
+    const idx = puzzles.findIndex((p) => p.id === id);
+    if (idx < 0) {
+      return res.status(404).json({ error: "Puzzle not found" });
+    }
+    puzzles[idx] = payload;
+    savePuzzles(puzzles);
+    res.json({ id: payload.id, date: payload.date });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to update puzzle" });
   }
 });
 
-// DELETE /api/daily/puzzles/:id — delete daily puzzle (dev only)
+// DELETE /api/daily/puzzles/:id — delete daily puzzle (dev or admin-secret)
 app.delete("/api/daily/puzzles/:id", guardDevOnly, (req, res) => {
   try {
     const { id } = req.params;
-    db.run("DELETE FROM puzzles WHERE id = ?", [id]);
-    saveDb();
+    const all = loadPuzzles();
+    const puzzles = all.filter((p) => p.id !== id);
+    if (puzzles.length === all.length) {
+      return res.status(404).json({ error: "Puzzle not found" });
+    }
+    savePuzzles(puzzles);
     res.status(204).send();
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to delete puzzle" });
-  }
-});
-
-// POST /api/puzzles/seed — bulk insert puzzles (dev only)
-app.post("/api/puzzles/seed", (req, res) => {
-  if (process.env.NODE_ENV === "production") {
-    return res.status(403).json({ error: "Seeding not allowed in production" });
-  }
-  try {
-    const puzzles = req.body;
-    if (!Array.isArray(puzzles)) {
-      return res.status(400).json({ error: "Body must be an array of puzzles" });
-    }
-    let inserted = 0;
-    for (const puzzle of puzzles) {
-      const id = puzzle.id || nanoid(10);
-      const data = JSON.stringify({ ...puzzle, id });
-      db.run("INSERT OR REPLACE INTO puzzles (id, data) VALUES (?, ?)", [
-        id,
-        data,
-      ]);
-      inserted++;
-    }
-    saveDb();
-    res.json({ inserted });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Failed to seed puzzles" });
   }
 });
 

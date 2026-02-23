@@ -1,0 +1,132 @@
+[
+  {
+    "id": "easy-coffee",
+    "difficulty": "easy",
+    "messages": [
+      { "id": "m1", "speaker": "A", "text": "Hey, want to grab coffee later?" },
+      { "id": "m2", "speaker": "B", "text": "Sure! When works for you?" },
+      { "id": "m3", "speaker": "A", "text": "How about 3pm?" },
+      { "id": "m4", "speaker": "B", "text": "Perfect, see you then ☕" }
+    ],
+    "correctOrder": ["m1", "m2", "m3", "m4"],
+    "constraints": []
+  },
+  {
+    "id": "easy-movie",
+    "difficulty": "easy",
+    "messages": [
+      { "id": "m1", "speaker": "A", "text": "Movie tonight?" },
+      { "id": "m2", "speaker": "B", "text": "Yeah what do you want to see?" },
+      { "id": "m3", "speaker": "A", "text": "That new sci-fi one?" },
+      { "id": "m4", "speaker": "B", "text": "Done. 7pm?" },
+      { "id": "m5", "speaker": "A", "text": "See you there 🍿" }
+    ],
+    "correctOrder": ["m1", "m2", "m3", "m4", "m5"],
+    "constraints": []
+  },
+  {
+    "id": "easy-dinner",
+    "difficulty": "easy",
+    "messages": [
+      { "id": "m1", "speaker": "A", "text": "Pizza or Thai?" },
+      { "id": "m2", "speaker": "B", "text": "Thai" },
+      { "id": "m3", "speaker": "A", "text": "Same. Ordering in 10" },
+      { "id": "m4", "speaker": "B", "text": "I'll be over at 7" }
+    ],
+    "correctOrder": ["m1", "m2", "m3", "m4"],
+    "constraints": []
+  },
+  {
+    "id": "medium-running-late",
+    "difficulty": "medium",
+    "messages": [
+      { "id": "m1", "speaker": "A", "text": "Leaving in 5" },
+      { "id": "m2", "speaker": "B", "text": "K, I'm at the usual spot" },
+      { "id": "m3", "speaker": "A", "text": "Actually stuck in traffic, more like 15" },
+      { "id": "m4", "speaker": "B", "text": "No worries" },
+      { "id": "m5", "speaker": "A", "text": "Getting off the exit now" },
+      { "id": "m6", "speaker": "B", "text": "See you when you get here" }
+    ],
+    "correctOrder": ["m1", "m2", "m3", "m4", "m5", "m6"],
+    "constraints": []
+  },
+  {
+    "id": "medium-group-dinner",
+    "difficulty": "medium",
+    "messages": [
+      { "id": "m1", "speaker": "A", "text": "Dinner Friday? Thinking that place on 5th" },
+      { "id": "m2", "speaker": "B", "text": "I'm in" },
+      { "id": "m3", "speaker": "A", "text": "Jess coming too" },
+      { "id": "m4", "speaker": "B", "text": "Cool, what time" },
+      { "id": "m5", "speaker": "A", "text": "7:30? I'll book" },
+      { "id": "m6", "speaker": "B", "text": "Perfect" },
+      { "id": "m7", "speaker": "A", "text": "Done. Table for 3" }
+    ],
+    "correctOrder": ["m1", "m2", "m3", "m4", "m5", "m6", "m7"],
+    "constraints": []
+  },
+  {
+    "id": "medium-weekend",
+    "difficulty": "medium",
+    "messages": [
+      { "id": "m1", "speaker": "A", "text": "What are you up to this weekend?" },
+      { "id": "m2", "speaker": "B", "text": "Not much, you?" },
+      { "id": "m3", "speaker": "A", "text": "Maybe hiking if the weather holds" },
+      { "id": "m4", "speaker": "B", "text": "I'd be down" },
+      { "id": "m5", "speaker": "A", "text": "Saturday morning? Early to beat the heat" },
+      { "id": "m6", "speaker": "B", "text": "7am at the trailhead?" },
+      { "id": "m7", "speaker": "A", "text": "Deal 👋" }
+    ],
+    "correctOrder": ["m1", "m2", "m3", "m4", "m5", "m6", "m7"],
+    "constraints": []
+  },
+  {
+    "id": "hard-surprise",
+    "difficulty": "hard",
+    "messages": [
+      { "id": "m1", "speaker": "A", "text": "She has no idea right" },
+      { "id": "m2", "speaker": "B", "text": "None. We're good for 7" },
+      { "id": "m3", "speaker": "A", "text": "I'll bring the cake" },
+      { "id": "m4", "speaker": "B", "text": "I told her we're just doing dinner at mine" },
+      { "id": "m5", "speaker": "A", "text": "Perfect cover" },
+      { "id": "m6", "speaker": "B", "text": "Everyone's in. Just don't reply in the group" },
+      { "id": "m7", "speaker": "A", "text": "Got it. See you at 7" },
+      { "id": "m8", "speaker": "B", "text": "She's going to freak" }
+    ],
+    "correctOrder": ["m1", "m2", "m3", "m4", "m5", "m6", "m7", "m8"],
+    "constraints": []
+  },
+  {
+    "id": "hard-two-topics",
+    "difficulty": "hard",
+    "messages": [
+      { "id": "m1", "speaker": "A", "text": "Did you send the report?" },
+      { "id": "m2", "speaker": "B", "text": "Yeah just now" },
+      { "id": "m3", "speaker": "A", "text": "Also are we still on for Saturday?" },
+      { "id": "m4", "speaker": "B", "text": "Yep. 2pm at the usual place?" },
+      { "id": "m5", "speaker": "A", "text": "Thanks on the report" },
+      { "id": "m6", "speaker": "B", "text": "No problem" },
+      { "id": "m7", "speaker": "A", "text": "And yeah 2pm works" },
+      { "id": "m8", "speaker": "B", "text": "Cool see you then" }
+    ],
+    "correctOrder": ["m1", "m2", "m3", "m4", "m5", "m6", "m7", "m8"],
+    "constraints": []
+  },
+  {
+    "id": "hard-planning",
+    "difficulty": "hard",
+    "messages": [
+      { "id": "m1", "speaker": "A", "text": "So we need to figure out the order" },
+      { "id": "m2", "speaker": "B", "text": "Flight first then hotel?" },
+      { "id": "m3", "speaker": "A", "text": "I was thinking hotel - prices might drop" },
+      { "id": "m4", "speaker": "B", "text": "Good point" },
+      { "id": "m5", "speaker": "A", "text": "And we should lock the dates before we tell everyone" },
+      { "id": "m6", "speaker": "B", "text": "Right. July 12-19?" },
+      { "id": "m7", "speaker": "A", "text": "Perfect. I'll check availability" },
+      { "id": "m8", "speaker": "B", "text": "Let me know what you find" },
+      { "id": "m9", "speaker": "A", "text": "Will do" }
+    ],
+    "correctOrder": ["m1", "m2", "m3", "m4", "m5", "m6", "m7", "m8", "m9"],
+    "constraints": []
+  }
+]

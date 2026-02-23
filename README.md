@@ -56,13 +56,13 @@ npm run dev
 
 ### Seed starter puzzles
 
-With the server running:
+No server required. From the repo root:
 
 ```bash
 npm run seed
 ```
 
-Inserts two sample puzzles into the database — one dated today, one tomorrow. Edit `server/seed.js` to add your own puzzles, then re-run the command.
+Writes two sample puzzles to `server/data/puzzles.json` — one dated today, one tomorrow. Edit `server/seed.js` to add your own puzzles, then re-run. The server loads puzzles from this file on each request.
 
 ### Build for production
 
@@ -71,21 +71,19 @@ npm run build
 NODE_ENV=production npm run server
 ```
 
-The server serves both the static frontend and the API. Deploy to Railway, Render, Fly.io, etc. Make sure `server/data/` is persisted across deploys — that's where the SQLite database lives.
+The server serves both the static frontend and the API. Deploy to Railway, Render, Fly.io, etc. Puzzles live in `server/data/puzzles.json` (committed); play stats are stored in `server/data/results.json` (gitignored). No database to provision or migrate.
 
 ---
 
 ## Creating puzzles
 
-Puzzle creation is available in **dev mode only** (not exposed in production).
+Puzzle creation is available in **dev mode** (with `VITE_DEV_MODE=true`) or in **production** when you set an admin secret.
 
-Enable it by setting `VITE_DEV_MODE=true` in your `.env` file:
+**Dev:** Set `VITE_DEV_MODE=true` in `.env`. This adds a **Puzzle** link and the admin dashboard at `/puzzle`.
 
-```
-VITE_DEV_MODE=true
-```
+**Production:** Set `ADMIN_SECRET` in the server environment. Then send that value on admin API requests via the `Authorization: Bearer <ADMIN_SECRET>` header or `X-Admin-Secret: <ADMIN_SECRET>`. The frontend does not send this by default; use it for scripts or a separate admin tool, or add a simple login that sends the header.
 
-This adds a **Puzzle** link to the top of the app, which opens the admin dashboard at `/puzzle`. From there you can:
+From the admin dashboard you can:
 
 - **Create** a new puzzle at `/puzzle/new` — live preview updates as you type
 - **Edit** an existing puzzle at `/puzzle/:id`
@@ -95,7 +93,7 @@ The editor includes a side-by-side live preview of exactly how the puzzle will l
 
 **The "Hide message content" toggle** on each message blacks out that message's text for players. Use it to add mystery — it's optional and not required for the puzzle to work.
 
-**Release date** controls which puzzle appears on a given day. The API serves the puzzle whose date matches today, falling back to the most recent dated puzzle if none matches.
+**Scheduling:** Each puzzle has a **date** (YYYY-MM-DD). The API serves the puzzle whose date matches today, falling back to the most recent dated puzzle if none matches. To publish a puzzle for a given day, create or edit it and set its date to that day. Only one puzzle per day is used; if multiple share a date, the API picks one deterministically.
 
 ---
 
@@ -133,9 +131,10 @@ re-chat/
 │       └── chatColors.ts        # Sender color assignment logic
 ├── server/
 │   ├── index.js                 # Express API (daily puzzle, answer submission, CRUD)
-│   ├── seed.js                  # Seed script — edit and run to populate puzzles
+│   ├── seed.js                  # Seed script — writes puzzles.json (no server required)
 │   └── data/
-│       └── puzzles.db           # SQLite database (gitignored)
+│       ├── puzzles.json         # Puzzle roster (committed)
+│       └── results.json         # Play stats (gitignored)
 └── package.json
 ```
 
@@ -144,7 +143,7 @@ re-chat/
 ## Tech stack
 
 - **Frontend:** React 19, TypeScript, Vite, Mantine UI
-- **Backend:** Express, sql.js (SQLite), nanoid
+- **Backend:** Express, file-based JSON storage (puzzles.json, results.json), nanoid
 
 ---
 

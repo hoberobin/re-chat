@@ -8,7 +8,6 @@
   "dependencies": {
     "cors": "^2.8.5",
     "express": "^4.21.1",
-    "nanoid": "^5.0.9",
-    "sql.js": "^1.11.0"
+    "nanoid": "^5.0.9"
   }
 }

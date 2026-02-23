@@ -23,5 +23,6 @@ dist-ssr
 *.sln
 *.sw?
 
-# Server
-server/data/
+# Server data (allow puzzles.json to be committed)
+server/data/*.db
+server/data/results.json
