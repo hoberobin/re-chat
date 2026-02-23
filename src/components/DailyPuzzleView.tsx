@@ -158,11 +158,6 @@ export function DailyPuzzleView({
             />
           ) : (
             <Stack gap={12}>
-              {subtitle !== "Preview" && (
-                <Text size="xs" c="dimmed" fw={600} tt="uppercase" lts="0.05em">
-                  Today&apos;s mystery
-                </Text>
-              )}
               <PremiseCard premise={puzzle.premise} />
               <AnswerOptions
                 options={puzzle.options}

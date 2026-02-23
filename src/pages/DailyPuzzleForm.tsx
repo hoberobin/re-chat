@@ -355,7 +355,7 @@ export function DailyPuzzleForm() {
                 {generating ? "Generating…" : "Generate with AI"}
               </Button>
               {generateError && (
-                <Alert color="red" variant="light" mt={10} radius="sm" size="sm">
+                <Alert color="red" variant="light" mt={10} radius="sm">
                   {generateError}
                 </Alert>
               )}
